@@ -1,0 +1,97 @@
+#!/bin/env bash
+
+# source the environment settings if present (PATH, and others, live there)
+[ -r "$HOME/.bash/environment" ] && source "$HOME/.bash/environment"
+
+# if the shell is non-interactive
+if [ -z "$NX_INTERACTIVE_SHELL" ]; then
+	# set by the environment to simplify the path; unset here if we're non-interactive
+	unalias nx_remove_duplicates_delimited &>/dev/null
+	# bail
+	return
+fi
+
+# if we haven't loaded this script yet
+# we use UID's so su -p works as expected.
+if [ "$NX_FRAMEWORK_SOURCED" != "$UID" ]; then
+
+	export NX_FRAMEWORK_SOURCED="$UID"
+
+	# if a system has something like "alias mem='top', making a function like 'mem()' actually
+	# results in making 'top()' so we fix that by dealiasing before creating functions.
+	unalias nx_dealias &>/dev/null
+	nx_dealias()
+	{
+		unalias "$@" &>/dev/null
+	}
+	nx_dealias nx_error
+	nx_error()
+	{
+		echo "[ERROR] $@" >&2
+	}
+	nx_dealias nx_isnum
+	nx_isnum()
+	{
+		if [ "$1" -eq "$1" ] 2>/dev/null; then
+			return 0
+		fi
+		return 1
+	}
+	nx_dealias nx_library
+	nx_library()
+	{
+		local f
+		local varname
+		for f in "$@"; do
+			varname="NX_LIB_SOURCED_${f}"
+			if [ "$(eval "echo \$$varname")" != "$UID" ]; then
+				export $varname="$UID"
+				local filename="$NX_LIBRARY_PATH/lib/$f"
+				[ -r "$filename" ] && source "$filename" || nx_error "library file \"$f\" could not be sourced." 
+			fi
+		done
+	}
+
+	nx_dealias nx_interactive_shell
+	nx_interactive_shell()
+	{
+		[ -n "$NX_INTERACTIVE_SHELL" ];
+	}
+
+
+	# Colorize ls output per the system settings
+	nx_dealias nx_dircolors
+	nx_dircolors()
+	{
+		local f
+		# enable color support of ls
+		if type -P dircolors &>/dev/null; then
+			# use the first file found, otherwise the defaults
+			for f in "$HOME/.dircolors" "/etc/DIR_COLORS" "/etc/dircolors" ""
+			do
+				if [ -r "$f" ]; then eval "$(dircolors -b "$f")"; break; fi
+			done
+			# if we made it to the empty string, we never found one, so use defaults
+			[ -z "$f" ] && eval "$(dircolors -b)"
+		fi
+	}
+
+	# Enable bash completion
+	nx_dealias nx_bash_completion
+	nx_bash_completion()
+	{
+		local f
+		# source the first system bash completion script that we find
+		for f in /etc/profile.d/bash{-,_}completion{.sh,} /etc/bash_completion
+		do
+			if [ -r "$f" ]; then
+				source "$f"
+				break
+			fi
+		done
+
+		# Allow tab completion after sudo
+		complete -cf sudo
+	}
+
+fi

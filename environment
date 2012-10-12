@@ -1,0 +1,118 @@
+#!/bin/bash
+
+
+# check for an interactive shell
+case $- in
+	*i*) # interactive shell
+		export NX_INTERACTIVE_SHELL="1"
+		;;
+esac
+
+
+# if there's no valid library path yet
+if ! [ -d "$NX_LIBRARY_PATH" ]; then
+	# if we can use bash 3 features
+	if [ -n "$BASH_SOURCE" ]; then
+		# try to get the path to the library files
+		NX_LIBRARY_PATH="$(dirname "$(readlink -f $BASH_SOURCE)")"
+	fi
+
+	if ! [ -d "$NX_LIBRARY_PATH" ]; then
+		# if we didn't find a path, revert to the default
+		export NX_LIBRARY_PATH="$HOME/.bash"
+	else
+		# if we did find it, export it
+		export NX_LIBRARY_PATH
+	fi
+fi
+
+# set variable identifying the chroot you work in (used in the prompt below)
+export NX_CHROOT="$debian_chroot"
+if [ -z "$NX_CHROOT" ] && [ -r "/etc/debian_chroot" ]; then
+	export NX_CHROOT="$(cat /etc/debian_chroot)"
+fi
+
+# get the environment set up properly
+for benv_f in /etc/profile # add others here
+do
+	[ -r "$benv_f" ] && source "$benv_f"
+done
+
+# source the first global definition file we find, so we can override as necessary
+for benv_f in /etc/{bash/bashrc,bash.bashrc,bashrc}
+do
+	if [ -r "$benv_f" ]; then source "$benv_f"; break; fi
+done
+
+# add system and user bins to path (may already be there, but this makes sure)
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
+
+# if we got here from sudo, add that user's home bin path as well
+if [ -n "$SUDO_USER" ] && eval [ -d "~$SUDO_USER" ]; then
+	eval export PATH="~$SUDO_USER/bin:$PATH"
+fi
+
+# put our home bin path at the beginning.
+export PATH="$HOME/bin:$PATH"
+
+export LD_LIBRARY_PATH="$HOME/lib:$LD_LIBRARY_PATH"
+
+# set the editors
+export SVN_EDITOR="vim"
+export EDITOR="vim"
+export VISUAL="vim"
+
+export PAGER="less -R"
+
+# let java antialias fonts correctly
+export _JAVA_OPTIONS="-Dswing.aatext=true -Dawt.useSystemAAFontSettings=lcd"
+
+# where our android tools live
+export ANDROID_HOME="/opt/android-sdk-update-manager"
+
+# removes later-duplicates from a delimited list, and allows specifying a new delimiter.
+unalias nx_remove_duplicates_delimited &>/dev/null
+nx_remove_duplicates_delimited()
+{
+	if [ $# -ne 3 ]; then
+		echo "usage: remove_duplicates_delimited <input_delimiter> <output_delimiter> <delimited_data>" 1>&2
+		return 1
+	fi
+	local in_delim="$1"
+	local out_delim="$2"
+	local delim_data="$3"
+
+	local i
+	local j
+	local path_array
+	IFS="$in_delim" read -r -a path_array <<< "$delim_data"
+
+	for (( i = 0 ; i < ${#path_array[@]} ; i++ ))
+	do
+		if [ "${path_array[$i]}" == "$in_delim" ]; then
+			unset path_array[$i]
+		else
+			for (( j = $(($i+1)) ; $j < ${#path_array[@]} ; j++ ))
+			do
+				if [ "${path_array[$i]}" == "${path_array[$j]}" ]; then
+					# mark it for deletion
+					path_array[$j]="$in_delim"
+				fi
+			done
+		fi
+	done
+	echo "$(IFS="$out_delim"; echo "${path_array[*]}")"
+}
+
+# remove later duplicates from PATH
+export PATH="$(nx_remove_duplicates_delimited ":" ":" "$PATH")"
+
+# source local version, if present
+for benv_f in "$HOME/.bash/local/environment"
+do
+	[ -r "$benv_f" ] && source "$benv_f"
+done
+
+# clear used values
+unset benv_f
+

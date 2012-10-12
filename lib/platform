@@ -1,0 +1,51 @@
+#!/bin/env bash
+
+if [ -n "$NX_FRAMEWORK_SOURCED" ]; then
+
+	nx_dealias nx_nonaliased
+	nx_nonaliased()
+	{
+		local cmd="$1"
+		shift
+		local realapp="$(type -P "$cmd" 2>/dev/null)"
+		if ! [ -x "$realapp" ]; then
+			echo "ERROR: $cmd command not found!" >&2
+			return 1
+		fi
+
+		"$realapp" $@
+	}
+	nx_dealias nx_has_terminfo_tools
+	nx_has_terminfo_tools()
+	{
+		type -P infocmp &>/dev/null && type -P tic &>/dev/null
+	}
+	nx_dealias nx_has_sed
+	nx_has_sed()
+	{
+		type -P sed &>/dev/null
+	}
+	# exit code indicates success, output is the command name 
+	nx_dealias nx_path_search
+	nx_path_search()
+	{
+		if [ $# -ne 1 ]; then
+			echo "usage: nx_path_search <filename_path_string>" 1>&2
+			return 1
+		fi
+		type -P "$@" 2>/dev/null
+	}
+	# same as path_search, but with a custom PATH 
+	nx_dealias nx_path_search_custom
+	nx_path_search_custom()
+	{
+		if [ $# -ne 2 ]; then
+			echo "usage: nx_path_search_custom <filename_path_string> <search_path>" 1>&2
+			return 1
+		fi
+		local filename="$1"
+		shift
+		PATH="$@" nx_path_search "$filename"
+	}
+
+fi

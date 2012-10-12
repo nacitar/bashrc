@@ -1,0 +1,70 @@
+#!/bin/env bash
+
+if [ -n "$NX_FRAMEWORK_SOURCED" ]; then
+
+	nx_library "stringops"
+
+	nx_dealias nx_set_tmux_window_name
+	nx_set_tmux_window_name()
+	{
+		printf "\ek$@\e\\"
+	}
+	nx_dealias nx_set_tmux_pane_title
+	nx_set_tmux_pane_title()
+	{
+		printf "\e]2;$@\e\\"
+	}
+	nx_dealias nx_set_tmux_titles
+	nx_set_tmux_titles()
+	{
+		nx_set_tmux_window_name "$@"
+		nx_set_tmux_pane_title "$@"
+	}
+	nx_dealias nx_get_user_from_pid
+	nx_get_user_from_pid()
+	{
+		local status="/proc/$1/status"
+		if nx_has_sed && [ -r "$status" ]; then
+			sed -n 's/^Uid:[[:space:]]*\([[:digit:]]\+\).*$/\1/p' "$status"
+		fi
+	}
+	nx_dealias nx_get_tmux_pid
+	nx_get_tmux_pid()
+	{
+		local values
+		IFS=, values=( $TMUX )
+		echo "${values[1]}"
+	}
+	nx_dealias nx_get_tmux_user
+	nx_get_tmux_user()
+	{
+		echo "$(nx_get_user_from_pid "$(nx_get_tmux_pid)")"
+	}
+	nx_dealias nx_check_tmux_user
+	nx_check_tmux_user()
+	{
+		local user="$(nx_get_tmux_user)"
+		if [ "$UID" == "$user" ]; then
+			NX_IS_TMUX_USER=1
+			return 0
+		else
+			NX_IS_TMUX_USER=0
+			return 1
+		fi
+	}
+
+	nx_dealias nx_prompt_command_for_tmux_titles
+	nx_prompt_command_for_tmux_titles()
+	{
+		local shortpath="$(nx_abbreviate_dir "$PWD" 0)"
+		local longpath="$(nx_abbreviate_dir "$PWD" -1)"
+
+		local hostprefix="$USER@${HOSTNAME%%.*}: "
+		local windowprefix
+		# if we aren't the tmux user, or we're ssh'd over somewhere, add the host info
+		[ "$NX_IS_TMUX_USER" != "1" ] || [ -n "$SSH_CLIENT" ] && windowprefix="$hostprefix" || windowprefix=""
+
+		nx_set_tmux_pane_title "$hostprefix$longpath"
+		nx_set_tmux_window_name "$windowprefix$shortpath"
+	}
+fi
