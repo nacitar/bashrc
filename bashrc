@@ -56,7 +56,7 @@ shopt -s histappend
 shopt -s checkwinsize
 
 # Disable terminal blanking
-setterm -blank 0 &>/dev/null
+setterm -blank 0 -powersave off -powerdown 0 &>/dev/null
 
 ##########
 # PROMPT #
