@@ -1,6 +1,7 @@
 #!/bin/env bash
 
-if [ -n "$NX_FRAMEWORK_SOURCED" ]; then
+# if the framework is sourced
+if type -p NX_FRAMEWORK_SOURCED &>/dev/null; then
 
 	nx_dealias nx_nonaliased
 	nx_nonaliased()

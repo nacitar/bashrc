@@ -11,11 +11,8 @@ if [ -z "$NX_INTERACTIVE_SHELL" ]; then
 	return
 fi
 
-# if we haven't loaded this script yet
-# we use UID's so su -p works as expected.
-if [ "$NX_FRAMEWORK_SOURCED" != "$UID" ]; then
-
-	export NX_FRAMEWORK_SOURCED="$UID"
+# if the NX_FRAMEWORK_SOURCED alias is not defined, then assume we aren't loaded
+if ! type -p NX_FRAMEWORK_SOURCED &>/dev/null; then
 
 	# if a system has something like "alias mem='top', making a function like 'mem()' actually
 	# results in making 'top()' so we fix that by dealiasing before creating functions.
@@ -24,6 +21,11 @@ if [ "$NX_FRAMEWORK_SOURCED" != "$UID" ]; then
 	{
 		unalias "$@" &>/dev/null
 	}
+
+	# create the function used to know if we're loaded
+	nx_dealias NX_FRAMEWORK_SOURCED
+	NX_FRAMEWORK_SOURCED()	{ return 0; }
+
 	nx_dealias nx_error
 	nx_error()
 	{
@@ -43,9 +45,11 @@ if [ "$NX_FRAMEWORK_SOURCED" != "$UID" ]; then
 		local f
 		local varname
 		for f in "$@"; do
+
 			varname="NX_LIB_SOURCED_${f}"
-			if [ "$(eval "echo \$$varname")" != "$UID" ]; then
-				export $varname="$UID"
+			if ! [ type -p "$varname" &>/dev/null ]; then
+				# create the function used to determine if a library has been loaded
+				eval "${varname}() { return 0; }" &>/dev/null
 				local filename="$NX_LIBRARY_PATH/lib/$f"
 				[ -r "$filename" ] && source "$filename" || nx_error "library file \"$f\" could not be sourced." 
 			fi
@@ -93,5 +97,6 @@ if [ "$NX_FRAMEWORK_SOURCED" != "$UID" ]; then
 		# Allow tab completion after sudo
 		complete -cf sudo
 	}
+
 
 fi
