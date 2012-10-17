@@ -4,6 +4,9 @@
 #
 # IF YOU SEE THIS, YOU SHOULDN'T BE CHANGING IT!!!!
 #
+# The file you should edit if you use this bashrc is
+# located here: "$HOME/.bash/local/bashrc"
+#
 # Either make .bashrc a symlink to this:
 # $ ln -s "$HOME/.bashrc" "$HOME/.bash/bashrc"
 #
@@ -12,9 +15,6 @@
 #
 # OR, make your own from scratch using the framework by
 # by copying the command below this comment into your bashrc.
-#
-# The file you should edit if you use this bashrc is
-# located here: "$HOME/.bash/local/bashrc"
 #
 ###########################################################
 
