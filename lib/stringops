@@ -26,7 +26,11 @@ if type -p NX_FRAMEWORK_SOURCED &>/dev/null; then
 				p[c++]=${d:0:n}
 			done
 		fi
-		echo "${p[*]}"
+		if [ "${#p[@]}" == "1" ] && [ -z "${p[0]}" ]; then
+			echo "/"
+		else
+			echo "${p[*]}"
+		fi
 	}
 
 fi
