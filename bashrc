@@ -94,7 +94,7 @@ esac
 
 
 # If color is supported, we want to always use color where this flag is used.
-if nx_terminfo_colors &>/dev/null; then
+if nx_tput_terminfo_colors &>/dev/null; then
 	color_flag="--color=always"
 else
 	color_flag="--color=auto"
