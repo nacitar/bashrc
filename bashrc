@@ -24,7 +24,7 @@
 ############
 # LIBARIES #
 ############
-nx_library "termops" "tmux" "platform" "cdiff"
+nx_library "termops" "tmux" "platform" "cdiff" "ssh_key"
 
 ##############
 # TERM FIXES #
