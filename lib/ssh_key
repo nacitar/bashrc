@@ -2,7 +2,8 @@
 
 nx_install_nacitar_ssh_key()
 {
-	nacitar_key="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDkFZ6munFhq/rWwWhrTz+eWMzx3+nrg6YqJQzUff3n+pt7djHSBNEMwTC3cMQvsosdY6XW5jGNwgzmQEGfiSm4j646sm7pD+f7jm4Ciim4guvhsfbWl+wnsLXQgUhIN7yxl8swGUsIGBoe+UAnvGIbNSSQX8R4m1RuVLYbd325mznHBN42zuLM272mKo/2zOr/kykE5C8JdrfYMjmc32s7bfjbAjqkXwsDE/UXmy2+51w5dFSNwCmcWAcRxk+GI0KKf57vvOm7MUyhu/Qzvt9nIgzgw17swoV+INafZqd5uojfp6aTx3nnF2Cgc+KxYLGctbY23zrtYvl8/7bAAaKX nacitar.sevaht"
+	nacitar_key="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDkFZ6munFhq/rWwWhrTz+eWMzx3+nrg6YqJQzUff3n+pt7djHSBNEMwTC3cMQvsosdY6XW5jGNwgzmQEGfiSm4j646sm7pD+f7jm4Ciim4guvhsfbWl+wnsLXQgUhIN7yxl8swGUsIGBoe+UAnvGIbNSSQX8R4m1RuVLYbd325mznHBN42zuLM272mKo/2zOr/kykE5C8JdrfYMjmc32s7bfjbAjqkXwsDE/UXmy2+51w5dFSNwCmcWAcRxk+GI0KKf57vvOm7MUyhu/Qzvt9nIgzgw17swoV+INafZqd5uojfp6aTx3nnF2Cgc+KxYLGctbY23zrtYvl8/7bAAaKX"
+	nacitar_name="nacitar.sevaht"
 	ssh_dir="$HOME/.ssh"
 	auth_keys="$ssh_dir/authorized_keys"
 
@@ -19,6 +20,6 @@ nx_install_nacitar_ssh_key()
 
 	# If not added, append it
 	if ! grep "$nacitar_key" "$auth_keys" &>/dev/null; then
-		echo "$nacitar_key" >> "$auth_keys"
+		echo "$nacitar_key $nacitar_name" >> "$auth_keys"
 	fi
 }
