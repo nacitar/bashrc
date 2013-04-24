@@ -55,6 +55,9 @@ shopt -s histappend
 # check the window size after each command and, if necessary, update the values of LINES and COLUMNS.
 shopt -s checkwinsize
 
+# disable history expansion so we can use ! in strings and filenames
+set +H
+
 # Disable terminal blanking
 setterm -blank 0 &>/dev/null
 setterm -powersave off &>/dev/null
