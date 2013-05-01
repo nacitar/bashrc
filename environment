@@ -14,7 +14,7 @@ if ! [ -d "$NX_LIBRARY_PATH" ]; then
 	# if we can use bash 3 features
 	if [ -n "$BASH_SOURCE" ]; then
 		# try to get the path to the library files
-		NX_LIBRARY_PATH="$(dirname "$(readlink -f $BASH_SOURCE)")"
+		NX_LIBRARY_PATH="$PWD/$(dirname "$BASH_SOURCE")"
 	fi
 
 	if ! [ -d "$NX_LIBRARY_PATH" ]; then

@@ -112,8 +112,9 @@ LS_DEF_FLAGS='-X'
 if ls --group-directories-first /dev/null &>/dev/null; then
 	LS_DEF_FLAGS="$LS_DEF_FLAGS --group-directories-first"
 fi
+
 # List files and directories
-alias ls='ls --color=auto $LS_DEF_FLAGS'
+alias ls='nx_ls --color=auto $LS_DEF_FLAGS'
 alias l="ls -bF $color_flag"
 alias la="l -A"
 alias ll="l -l"

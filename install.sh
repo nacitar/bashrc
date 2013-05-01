@@ -4,7 +4,7 @@ pushd "$(dirname "$0")" &>/dev/null
 
 fullname()
 {
-	readlink -f "$@"
+	echo "$PWD/$@"
 }
 
 ln -sf "$(fullname bashrc)" "$HOME/.bashrc"
