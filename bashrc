@@ -74,14 +74,14 @@ nx_bash_prompt
 # set window titles too, and tmux titles
 unset PROMPT_COMMAND
 case "$TERM" in
-	# If this is an xterm set the title to user@host:dir
-	xterm*|rxvt*)
-		PS1="\[\e]0;${NX_CHROOT:+($NX_CHROOT)}\u@\h: \w\a\]$PS1"
-		;;
-	# If this is a screen session, set the window title.
-	screen*)
-		PROMPT_COMMAND='nx_prompt_command_for_tmux_titles'
-		;;
+  # If this is an xterm set the title to user@host:dir
+  xterm*|rxvt*)
+    PS1="\[\e]0;${NX_CHROOT:+($NX_CHROOT)}\u@\h: \w\a\]$PS1"
+    ;;
+  # If this is a screen session, set the window title.
+  screen*)
+    PROMPT_COMMAND='nx_prompt_command_for_tmux_titles'
+    ;;
 esac
 
 
@@ -89,18 +89,18 @@ esac
 # ALIASES #
 ###########
 
-# We don't want to force color if the output isn't to a terminal however we also
-# don't want to have to do something special to force it when we want it.  If we
-# 'source' a script, it could be problematic.  However, any sane script would use
-# 'ls' rather than any of the ll/etc.. derivatives, thus it should be safe to
-# force color for the other aliases.
+# We don't want to force color if the output isn't to a terminal however we
+# also don't want to have to do something special to force it when we want it.
+# If we 'source' a script, it could be problematic.  However, any sane script
+# would use 'ls' rather than any of the ll/etc.. derivatives, thus it should be
+# safe to force color for the other aliases.
 
 
 # If color is supported, we want to always use color where this flag is used.
 if nx_tput_terminfo_colors &>/dev/null; then
-	color_flag="--color=always"
+  color_flag="--color=always"
 else
-	color_flag="--color=auto"
+  color_flag="--color=auto"
 fi
 
 # Alias to trim whitespace
@@ -110,7 +110,7 @@ alias trim='sed -e "s/^[[:space:]]*//;s/[[:space:]]*$//"'
 # Check for directory grouping support
 LS_DEF_FLAGS='-X'
 if ls --group-directories-first /dev/null &>/dev/null; then
-	LS_DEF_FLAGS="$LS_DEF_FLAGS --group-directories-first"
+  LS_DEF_FLAGS="$LS_DEF_FLAGS --group-directories-first"
 fi
 
 # List files and directories
@@ -127,14 +127,15 @@ alias lald='ls -bAld */ .*/'
 # This command strips color codes out of text, giving you "(b)are" text.
 # Useful if trying to do ll > bla.txt, given my forced-color output.
 # You can strip colors from a file via "bare -i filename", too :)
-alias bare='sed -r "s/\x1B\[([0-9]{1,3}((;[0-9]{1,3})*)?)?[m|K]//g"'
+alias bare='sed "s/\x1B\[\([0-9]\{1,3\}\(\(;[0-9]\{1,3\}\)*\)\?\)\?[m|K]//g"'
 alias b='bare'
 
 # wrap diff to use colordiff if it's available or normal diff otherwise
 alias diff="nx_diff_wrapper"
 alias diffc="CDIFF_FORCE_COLOR=1 nx_diff_wrapper"
 
-# enable svn wrapper that handles colordiff/cdiff and automatically colorizes diff if outputting to a terminal
+# enable svn wrapper that handles colordiff/cdiff and automatically colorizes
+# diff if outputting to a terminal
 alias svn="nx_svn_wrapper"
 
 # grep (force colorizing match string)
@@ -191,12 +192,12 @@ alias memfree='echo "$(($(memtotal)-$(memuse)))"'
 nx_dealias mem
 mem()
 {
-	local used="$(memuse)"
-	local total="$(memtotal)"
-	local free="$(($total-$used))"
-	echo -e "Total:\t$total kB\nUsed:\t$used kB\nFree:\t$free kB"
+  local used="$(memuse)"
+  local total="$(memtotal)"
+  local free="$(($total-$used))"
+  echo -e "Total:\t$total kB\nUsed:\t$used kB\nFree:\t$free kB"
 }
-	
+  
 # Gentoo eix portage tool; default command auto colors
 alias eixc='eix --force-color'
 
@@ -208,11 +209,11 @@ CPU_CORES=$(grep "^processor" /proc/cpuinfo 2>/dev/null | wc -l)
 
 # If the number of cores is actually a number
 if [ "$CPU_CORES" = "$[CPU_CORES+0]" ]; then
-	# add one to it
-	CPU_CORES=$[CPU_CORES+1]
+  # add one to it
+  CPU_CORES=$[CPU_CORES+1]
 else
-	# Default to 2
-	CPU_CORES=2
+  # Default to 2
+  CPU_CORES=2
 fi
 
 # Set the number of cores to use in make and scons
@@ -223,6 +224,6 @@ unset CPU_CORES
 # Load local scripts
 for f in "$NX_LIBRARY_PATH/local/bashrc"
 do
-	[ -r "$f" ] && source "$f"
+  [ -r "$f" ] && source "$f"
 done
 unset f
