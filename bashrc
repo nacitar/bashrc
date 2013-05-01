@@ -207,9 +207,9 @@ unset color_flag
 CPU_CORES=$(grep "^processor" /proc/cpuinfo 2>/dev/null | wc -l)
 
 # If the number of cores is actually a number
-if [ $CPU_CORES = $[CPU_CORES+0] ]; then
+if [ "$CPU_CORES" = "$[CPU_CORES+0]" ]; then
 	# add one to it
-	CPU_CORES=$[CPU_CORES+1];
+	CPU_CORES=$[CPU_CORES+1]
 else
 	# Default to 2
 	CPU_CORES=2
