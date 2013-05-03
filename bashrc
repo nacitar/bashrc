@@ -173,7 +173,7 @@ alias rm='rm -i'
 # Misc
 alias vi='vim'
 alias emacs='emacs -nw'
-alias df='df -h -x supermount'
+alias df='df -h'
 alias du='du -h'
 
 # sudo preserves environment, rsudo gives the original sudo if you find this undesirable. 
