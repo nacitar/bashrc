@@ -27,18 +27,18 @@ if ! type -p NX_FRAMEWORK_SOURCED &>/dev/null; then
   nx_ls()
   {
     if type -P gls &>/dev/null; then
-      gls $@
+      gls "$@"
     else
-      ls $@
+      ls "$@"
     fi
   }
   nx_dealias nx_readlink
   nx_readlink()
   {
     if type -P greadlink &>/dev/null; then
-      greadlink $@
+      greadlink "$@"
     else
-      readlink $@
+      readlink "$@"
     fi
   }
 
