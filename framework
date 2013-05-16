@@ -20,6 +20,7 @@ if ! type -p NX_FRAMEWORK_SOURCED &>/dev/null; then
 	nx_dealias()
 	{
 		unalias "$@" &>/dev/null
+		unset -f "$@" &>/dev/null
 	}
 
   # mac compatibility

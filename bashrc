@@ -19,6 +19,7 @@
 ###########################################################
 
 # Load the nx bash framework, or bail
+unset -f NX_FRAMEWORK_SOURCED &>/dev/null
 [ -r "$HOME/.bash/framework" ] && source "$HOME/.bash/framework" &>/dev/null || return
 
 ############
