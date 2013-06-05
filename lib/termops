@@ -17,10 +17,10 @@ if type -p NX_FRAMEWORK_SOURCED &>/dev/null; then
 		local ret=""
 		if type -P tput &>/dev/null; then
 			ret="$(tput "$@" 2>/dev/null)"
-			code="$?"
+			code=$?
 		fi
 		[ -n "$ret" ] && echo "$ret" || echo "$def_val"
-		return "$code"
+		return $code
 	}
 	nx_dealias nx_tput_cmd
 	nx_tput_cmd()
@@ -96,7 +96,7 @@ if type -p NX_FRAMEWORK_SOURCED &>/dev/null; then
 	{
 		local value
 		value="$(nx_tput_value "-1" colors)"
-		ret="$?"
+		ret=$?
 		if [ "$value" == "-1" ]; then
 			# attempt to use term to find the colors
 			case "$TERM" in
@@ -118,7 +118,7 @@ if type -p NX_FRAMEWORK_SOURCED &>/dev/null; then
 		# a value of -1 indicates no colors
 		[ "$value" == "-1" ] && return 1
 		# return the error value of the tput command
-		return "$ret"
+		return $ret
 	}
 	nx_dealias nx_check_term
 	nx_check_term()

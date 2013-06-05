@@ -30,7 +30,7 @@ if type -p NX_FRAMEWORK_SOURCED &>/dev/null; then
 				diff) ;;
 				*) # unknown command, just execute it
 					"$svnapp" $@
-					return
+					return $?
 				;;
 			esac
 			shift 1
