@@ -142,10 +142,8 @@ if type -p NX_FRAMEWORK_SOURCED &>/dev/null; then
 			# http://tmux.svn.sourceforge.net/viewvc/tmux/trunk/FAQ
 			case "$new_term" in
 				xterm)
-					if [ -n "$COLORTERM" ]; then
-						fixed_term="xterm-256color"
-						nx_tput_terminfo_exists "$fixed_term" && new_term="$fixed_term"
-					fi
+					fixed_term="xterm-256color"
+					nx_tput_terminfo_exists "$fixed_term" && new_term="$fixed_term"
 				;;
 				screen*)
 					local screen="screen"
