@@ -198,7 +198,7 @@ mem()
   local free="$(($total-$used))"
   echo -e "Total:\t$total kB\nUsed:\t$used kB\nFree:\t$free kB"
 }
-  
+
 # Gentoo eix portage tool; default command auto colors
 alias eixc='eix --force-color'
 
