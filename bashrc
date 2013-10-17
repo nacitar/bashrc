@@ -71,7 +71,6 @@ setterm -powerdown 0 &>/dev/null
 # use the default nx prompt
 nx_bash_prompt
 
-
 # set window titles too, and tmux titles
 unset PROMPT_COMMAND
 case "$TERM" in
@@ -116,7 +115,7 @@ fi
 
 # List files and directories
 alias ls='nx_ls --color=auto $LS_DEF_FLAGS'
-alias l="ls -bF $color_flag"
+alias l="ls -F $color_flag"
 alias la="l -A"
 alias ll="l -l"
 alias lal="l -Al"
