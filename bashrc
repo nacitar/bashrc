@@ -25,7 +25,7 @@ unset -f NX_FRAMEWORK_SOURCED &>/dev/null
 ############
 # LIBARIES #
 ############
-nx_library "termops" "tmux" "platform" "cdiff" "ssh_key"
+nx_library "termops" "tmux" "platform" "cdiff" "ssh_key" "util"
 
 ##############
 # TERM FIXES #
