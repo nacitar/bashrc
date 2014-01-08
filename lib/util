@@ -2,7 +2,7 @@
 
 # if the framework is sourced
 if type -p NX_FRAMEWORK_SOURCED &>/dev/null; then
-
+	nx_dealias nx_dict
 	nx_dict()
 	{
 	  curl dict://dict.org/d:"$@"
