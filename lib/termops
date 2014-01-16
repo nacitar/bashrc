@@ -242,6 +242,7 @@ if type -p NX_FRAMEWORK_SOURCED &>/dev/null; then
 		local fg_str
 		local bg_color
 		local bg_str
+		local escape_str
 		# headers
 		echo -en "  "
 		bg_color=-1
@@ -257,9 +258,14 @@ if type -p NX_FRAMEWORK_SOURCED &>/dev/null; then
 		while [ "$fg_color" -lt 16 ];
 		do
 			[ "$fg_color" -lt 10 ] && fg_str=" $fg_color" || fg_str="$fg_color"
-			[ "$fg_color" == "-1" ] && fg_str="fg"
+			if [ "$fg_color" == "-1" ]; then
+				fg_str="fg"
+				escape_str=""
+			else
+				escape_str="${NX_TERM_FG["$fg_color"]}"
+			fi
 			
-			echo -en "$fg_str ${NX_TERM_FG["$fg_color"]}$T"
+			echo -en "$fg_str $escape_str$T"
 			bg_color=0
 			while [ "$bg_color" -lt 16 ];
 			do
