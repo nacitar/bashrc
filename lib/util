@@ -5,7 +5,21 @@ if type -p NX_FRAMEWORK_SOURCED &>/dev/null; then
 	nx_dealias nx_dict
 	nx_dict()
 	{
-	  curl dict://dict.org/d:"$@"
+		local mode=0
+		local count=1
+		while read line; do
+			if [ $mode -eq 0 ] && [ "${line:0:4}" == "151 " ]; then
+				mode=1
+				[ $count -ne 1 ] && echo
+				echo "${count}. ${line:4}"
+				((count++))
+			elif [ $mode -eq 1 ]; then
+				if [ "$line" == $'.\r' ]; then
+					mode=0
+				else
+					echo "   ${line}"
+				fi
+			fi
+		done < <(curl dict://dict.org/d:"$@" 2>/dev/null)
 	}
-
 fi

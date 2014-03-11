@@ -164,6 +164,7 @@ alias p='cd -'
 alias md='mkdir'
 alias rd='rmdir'
 alias c='clear'
+alias n='yes "" | head -n"${LINES:=100}"'
 
 # Safety
 alias cp='cp -i'
