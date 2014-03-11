@@ -6,13 +6,13 @@ if type -p NX_FRAMEWORK_SOURCED &>/dev/null; then
 	nx_dict()
 	{
 		local mode=0
-		local count=1
+		local count=0
 		while read line; do
 			if [ $mode -eq 0 ] && [ "${line:0:4}" == "151 " ]; then
 				mode=1
-				[ $count -ne 1 ] && echo
-				echo "${count}. ${line:4}"
+				[ $count -ne 0 ] && echo
 				((count++))
+				echo "${count}. ${line:4}"
 			elif [ $mode -eq 1 ]; then
 				if [ "$line" == $'.\r' ]; then
 					mode=0
@@ -21,5 +21,6 @@ if type -p NX_FRAMEWORK_SOURCED &>/dev/null; then
 				fi
 			fi
 		done < <(curl dict://dict.org/d:"$@" 2>/dev/null)
+		[ $count -ne 0 ]
 	}
 fi
