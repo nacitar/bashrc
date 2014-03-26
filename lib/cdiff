@@ -29,7 +29,7 @@ if type -p NX_FRAMEWORK_SOURCED &>/dev/null; then
 				cdiff|colordiff|diffc) iscdiff=1 ;;
 				diff) ;;
 				*) # unknown command, just execute it
-					"$svnapp" $@
+					"$svnapp" "$@"
 					return $?
 				;;
 			esac
@@ -37,14 +37,14 @@ if type -p NX_FRAMEWORK_SOURCED &>/dev/null; then
 			# if we have colordiff and output is either forced or to a terminal
 			if type -P colordiff &>/dev/null && ( [ $iscdiff -eq 1 ] || nx_cdiff_enabled ); then
 				# colordiff the output
-				"$svnapp" --diff-cmd="colordiff" diff $@
+				"$svnapp" --diff-cmd="colordiff" diff "$@"
 			else
 				# diff the output
-				"$svnapp" --diff-cmd="diff" diff $@
+				"$svnapp" --diff-cmd="diff" diff "$@"
 			fi
 		else
 
-			"$svnapp" $@
+			"$svnapp" "$@"
 		fi
 	}
 	nx_dealias nx_diff_wrapper

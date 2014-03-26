@@ -14,7 +14,7 @@ if type -p NX_FRAMEWORK_SOURCED &>/dev/null; then
 			return 1
 		fi
 
-		"$realapp" $@
+		"$realapp" "$@"
 	}
 	nx_dealias nx_has_terminfo_tools
 	nx_has_terminfo_tools()
