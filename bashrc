@@ -116,7 +116,7 @@ alias trim='sed -e "s/^[[:space:]]*//;s/[[:space:]]*$//"'
 LS_DEF_FLAGS=""
 # Check for alphabetical extension sorting support
 if ls -X /dev/null &>/dev/null; then
-  LS_DEF_FLAGS='$LS_DEF_FLAGS -X'
+  LS_DEF_FLAGS="$LS_DEF_FLAGS -X"
 fi
 # Check for directory grouping support
 if ls --group-directories-first /dev/null &>/dev/null; then
