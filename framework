@@ -119,5 +119,14 @@ if ! type -p NX_FRAMEWORK_SOURCED &>/dev/null; then
 		complete -cf sudo
 	}
 
+  # Detect OS
+  nx_dealias nx_os
+  nx_os()
+  {
+    if type -P uname &>/dev/null; then
+      uname
+    fi
+  }
+
 
 fi

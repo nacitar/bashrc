@@ -97,10 +97,16 @@ esac
 
 
 # If color is supported, we want to always use color where this flag is used.
-if nx_tput_terminfo_colors &>/dev/null; then
-  color_flag="--color=always"
+if [ "$(nx_os)" == "Darwin" ]; then
+  auto_color_flag="-G"
+  color_flag="-G"
 else
-  color_flag="--color=auto"
+  auto_color_flag="--color=auto"
+  if nx_tput_terminfo_colors &>/dev/null; then
+    color_flag="--color=always"
+  else
+    color_flag="--color=auto"
+  fi
 fi
 
 # Alias to trim whitespace
@@ -114,7 +120,7 @@ if ls --group-directories-first /dev/null &>/dev/null; then
 fi
 
 # List files and directories
-alias ls='nx_ls --color=auto $LS_DEF_FLAGS'
+alias ls='nx_ls $auto_color_flag $LS_DEF_FLAGS'
 alias l="ls -F $color_flag"
 alias la="l -A"
 alias ll="l -l"
