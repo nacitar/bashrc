@@ -46,7 +46,7 @@ do
 done
 
 # add system and user bins to path (may already be there, but this makes sure)
-export PATH="/usr/local/sbin:/usr/local/bin:/opt/local/sbin:/opt/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/bin:$PATH"
+export PATH="/usr/local/sbin:/usr/local/bin:/opt/local/sbin:/opt/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/sbin:/opt/bin:$PATH"
 
 # if we got here from sudo, add that user's home bin path as well
 if [ -n "$SUDO_USER" ] && eval [ -d "~$SUDO_USER" ]; then
