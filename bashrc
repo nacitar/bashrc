@@ -191,8 +191,6 @@ alias dict='nx_dict'
 # sudo preserves environment, rsudo gives the original sudo if you find this undesirable. 
 alias rsudo='nx_nonaliased sudo'
 alias sudo='sudo -E'
-alias su='su -p'
-alias realsu='nx_nonaliased su'
 
 # Memory
 # output: kb pid args
