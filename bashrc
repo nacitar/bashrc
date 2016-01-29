@@ -176,11 +176,6 @@ alias rd='rmdir'
 alias c='clear'
 alias n='yes "" | head -n"${LINES:=100}"'
 
-# Safety
-alias cp='cp -i'
-alias mv='mv -i'
-alias rm='rm -i'
-
 # Misc
 alias vi='vim'
 alias emacs='emacs -nw'
