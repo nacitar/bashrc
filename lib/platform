@@ -31,7 +31,7 @@ if type -p NX_FRAMEWORK_SOURCED &>/dev/null; then
 	nx_path_search()
 	{
 		if [ $# -ne 1 ]; then
-			echo "usage: nx_path_search <filename_path_string>" 1>&2
+			echo 'usage: nx_path_search <filename_path_string>' 1>&2
 			return 1
 		fi
 		type -P "$@" 2>/dev/null
@@ -41,7 +41,7 @@ if type -p NX_FRAMEWORK_SOURCED &>/dev/null; then
 	nx_path_search_custom()
 	{
 		if [ $# -ne 2 ]; then
-			echo "usage: nx_path_search_custom <filename_path_string> <search_path>" 1>&2
+			echo 'usage: nx_path_search_custom <filename_path_string> <search_path>' 1>&2
 			return 1
 		fi
 		local filename="$1"

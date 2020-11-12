@@ -4,7 +4,7 @@
 # check for an interactive shell
 case $- in
 	*i*) # interactive shell
-		export NX_INTERACTIVE_SHELL="1"
+		export NX_INTERACTIVE_SHELL=1
 		;;
 esac
 
@@ -28,7 +28,7 @@ fi
 
 # set variable identifying the chroot you work in (used in the prompt below)
 export NX_CHROOT="$debian_chroot"
-if [ -z "$NX_CHROOT" ] && [ -r "/etc/debian_chroot" ]; then
+if [ -z "$NX_CHROOT" ] && [ -r '/etc/debian_chroot' ]; then
 	export NX_CHROOT="$(cat /etc/debian_chroot)"
 fi
 
@@ -59,24 +59,30 @@ export PATH="$HOME/bin:$PATH"
 export LD_LIBRARY_PATH="$HOME/lib:$LD_LIBRARY_PATH"
 
 # set the editors
-export SVN_EDITOR="vim"
-export EDITOR="vim"
-export VISUAL="vim"
+if type -P nvim &>/dev/null; then
+	export SVN_EDITOR='nvim'
+	export EDITOR='nvim'
+	export VISUAL='nvim'
+else
+	export SVN_EDITOR='vim'
+	export EDITOR='vim'
+	export VISUAL='vim'
+fi
 
-export PAGER="less -R"
+export PAGER='less -R'
 
 # let java antialias fonts correctly
-export _JAVA_OPTIONS="-Dswing.aatext=true -Dawt.useSystemAAFontSettings=lcd"
+export _JAVA_OPTIONS='-Dswing.aatext=true -Dawt.useSystemAAFontSettings=lcd'
 
 # where our android tools live
-export ANDROID_HOME="/opt/android-sdk-update-manager"
+export ANDROID_HOME='/opt/android-sdk-update-manager'
 
 # removes later-duplicates from a delimited list, and allows specifying a new delimiter.
 unalias nx_remove_duplicates_delimited &>/dev/null
 nx_remove_duplicates_delimited()
 {
 	if [ $# -ne 3 ]; then
-		echo "usage: remove_duplicates_delimited <input_delimiter> <output_delimiter> <delimited_data>" 1>&2
+		echo 'usage: remove_duplicates_delimited <input_delimiter> <output_delimiter> <delimited_data>' 1>&2
 		return 1
 	fi
 	local in_delim="$1"
@@ -107,7 +113,7 @@ nx_remove_duplicates_delimited()
 }
 
 # remove later duplicates from PATH
-export PATH="$(nx_remove_duplicates_delimited ":" ":" "$PATH")"
+export PATH="$(nx_remove_duplicates_delimited ':' ':' "$PATH")"
 
 # source local version, if present
 for benv_f in "$HOME/.bash/local/environment.d"/*

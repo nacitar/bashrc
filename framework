@@ -23,25 +23,25 @@ if ! type -p NX_FRAMEWORK_SOURCED &>/dev/null; then
 		unset -f "$@" &>/dev/null
 	}
 
-  # mac compatibility
-  nx_dealias nx_ls
-  nx_ls()
-  {
-    if type -P gls &>/dev/null; then
-      gls "$@"
-    else
-      ls "$@"
-    fi
-  }
-  nx_dealias nx_readlink
-  nx_readlink()
-  {
-    if type -P greadlink &>/dev/null; then
-      greadlink "$@"
-    else
-      readlink "$@"
-    fi
-  }
+	# mac compatibility
+	nx_dealias nx_ls
+	nx_ls()
+	{
+		if type -P gls &>/dev/null; then
+			gls "$@"
+		else
+			ls "$@"
+		fi
+	}
+	nx_dealias nx_readlink
+	nx_readlink()
+	{
+		if type -P greadlink &>/dev/null; then
+			greadlink "$@"
+		else
+			readlink "$@"
+		fi
+	}
 
 	# create the function used to know if we're loaded
 	nx_dealias NX_FRAMEWORK_SOURCED
@@ -92,7 +92,7 @@ if ! type -p NX_FRAMEWORK_SOURCED &>/dev/null; then
 		# enable color support of ls
 		if type -P dircolors &>/dev/null; then
 			# use the first file found, otherwise the defaults
-			for f in "$HOME/.dircolors" "/etc/DIR_COLORS" "/etc/dircolors" ""
+			for f in "$HOME/.dircolors" '/etc/DIR_COLORS' '/etc/dircolors' ''
 			do
 				if [ -r "$f" ]; then eval "$(dircolors -b "$f")"; break; fi
 			done
@@ -119,14 +119,13 @@ if ! type -p NX_FRAMEWORK_SOURCED &>/dev/null; then
 		complete -cf sudo
 	}
 
-  # Detect OS
-  nx_dealias nx_os
-  nx_os()
-  {
-    if type -P uname &>/dev/null; then
-      uname
-    fi
-  }
-
+	# Detect OS
+	nx_dealias nx_os
+	nx_os()
+	{
+		if type -P uname &>/dev/null; then
+			uname
+		fi
+	}
 
 fi

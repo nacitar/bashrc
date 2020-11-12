@@ -15,7 +15,7 @@ if type -p NX_FRAMEWORK_SOURCED &>/dev/null; then
 	nx_abbreviate_dir() {
 		local IFS=/ c=1 n d r p s
 		p=( ${1/#$HOME/\~} )
-		if [ "$2" != "-1" ]; then
+		if [ "$2" != -1 ]; then
 			r=${p[*]}
 			s=${#r}
 			while ((s>$2&&c<${#p[*]}-1))
@@ -26,8 +26,8 @@ if type -p NX_FRAMEWORK_SOURCED &>/dev/null; then
 				p[c++]=${d:0:n}
 			done
 		fi
-		if [ "${#p[@]}" == "1" ] && [ -z "${p[0]}" ]; then
-			echo "/"
+		if [ "${#p[@]}" == 1 ] && [ -z "${p[0]}" ]; then
+			echo '/'
 		else
 			echo "${p[*]}"
 		fi

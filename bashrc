@@ -97,15 +97,15 @@ esac
 
 
 # If color is supported, we want to always use color where this flag is used.
-if [ "$(nx_os)" == "Darwin" ]; then
-  auto_color_flag="-G"
-  color_flag="-G"
+if [ "$(nx_os)" == 'Darwin' ]; then
+  nx_auto_color_flag='-G'
+  nx_color_flag='-G'
 else
-  auto_color_flag="--color=auto"
+  nx_auto_color_flag='--color=auto'
   if nx_tput_terminfo_colors &>/dev/null; then
-    color_flag="--color=always"
+    nx_color_flag='--color=always'
   else
-    color_flag="--color=auto"
+    nx_color_flag='--color=auto'
   fi
 fi
 
@@ -113,7 +113,7 @@ fi
 alias trim='sed -e "s/^[[:space:]]*//;s/[[:space:]]*$//"'
 
 # Make aliases for directory listing
-LS_DEF_FLAGS=""
+LS_DEF_FLAGS=''
 # Check for alphabetical extension sorting support
 if ls -X /dev/null &>/dev/null; then
   LS_DEF_FLAGS="$LS_DEF_FLAGS -X"
@@ -124,11 +124,11 @@ if ls --group-directories-first /dev/null &>/dev/null; then
 fi
 
 # List files and directories
-alias ls='nx_ls $auto_color_flag $LS_DEF_FLAGS'
-alias l="ls -F $color_flag"
-alias la="l -A"
-alias ll="l -l"
-alias lal="l -Al"
+alias ls="nx_ls $nx_auto_color_flag $LS_DEF_FLAGS"
+alias l="ls -F $nx_color_flag"
+alias la='l -A'
+alias ll='l -l'
+alias lal='l -Al'
 # List only directories
 alias lsd='ls -bd */'
 alias lld='ls -bld */'
@@ -141,12 +141,12 @@ alias bare='sed "s/\x1B\[\([0-9]\{1,3\}\(\(;[0-9]\{1,3\}\)*\)\?\)\?[m|K]//g"'
 alias b='bare'
 
 # wrap diff to use colordiff if it's available or normal diff otherwise
-alias diff="nx_diff_wrapper"
-alias diffc="CDIFF_FORCE_COLOR=1 nx_diff_wrapper"
+alias diff='nx_diff_wrapper'
+alias diffc='CDIFF_FORCE_COLOR=1 nx_diff_wrapper'
 
 # enable svn wrapper that handles colordiff/cdiff and automatically colorizes
 # diff if outputting to a terminal
-alias svn="nx_svn_wrapper"
+alias svn='nx_svn_wrapper'
 
 # grep (force colorizing match string)
 alias grepc="grep $color_flag"
@@ -154,9 +154,9 @@ alias fgrepc="fgrep $color_flag"
 alias egrepc="egrep $color_flag"
 
 # grep (no colorizing match string)
-alias grep="grep --color=none"
-alias fgrep="fgrep --color=none"
-alias egrep="egrep --color=none"
+alias grep='grep --color=none'
+alias fgrep='fgrep --color=none'
+alias egrep='egrep --color=none'
 
 # a version of less that supports color output
 alias less='less -R'
@@ -177,7 +177,15 @@ alias c='clear'
 alias n='yes "" | head -n"${LINES:=100}"'
 
 # Misc
-alias vi='vim'
+if nx_path_search nvim &>/dev/null; then
+	alias vi='nvim'
+	alias vim='nvim'
+	alias view='nvim -R'
+	alias vimdiff='nvim -d'
+else
+	alias vi='vim'
+	alias view='vim -R'
+fi
 alias emacs='emacs -nw'
 alias df='df -h'
 alias du='du -h'
@@ -203,8 +211,10 @@ mem()
   echo -e "Total:\t$total kB\nUsed:\t$used kB\nFree:\t$free kB"
 }
 
-# Gentoo eix portage tool; default command auto colors
-alias eixc='eix --force-color'
+if nx_path_search eix &>/dev/null; then
+	# Gentoo eix portage tool; default command auto colors
+	alias eixc='eix --force-color'
+fi
 
 # Cleanup
 unset color_flag

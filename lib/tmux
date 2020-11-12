@@ -63,7 +63,7 @@ if type -p NX_FRAMEWORK_SOURCED &>/dev/null; then
 		local hostprefix="$USER@${HOSTNAME%%.*}: "
 		local windowprefix
 		# if we aren't the tmux user, or we're ssh'd over somewhere, add the host info
-		[ "$NX_IS_TMUX_USER" != "1" ] || [ -n "$SSH_CLIENT" ] && windowprefix="$hostprefix" || windowprefix=""
+		[ "$NX_IS_TMUX_USER" != 1 ] || [ -n "$SSH_CLIENT" ] && windowprefix="$hostprefix" || windowprefix=''
 
 		nx_set_tmux_pane_title "$hostprefix$longpath"
 		nx_set_tmux_window_name "$windowprefix$shortpath"

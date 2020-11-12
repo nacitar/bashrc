@@ -3,13 +3,13 @@
 # if the framework is sourced
 if type -p NX_FRAMEWORK_SOURCED &>/dev/null; then
 
-	nx_library "platform"
+	nx_library 'platform'
 
 	nx_dealias nx_cdiff_enabled
 	nx_cdiff_enabled()
 	{
 		# force if output is to terminal
-		if [ "$CDIFF_FORCE_COLOR" == "1" ] || [ -t 1 ]; then
+		if [ "$CDIFF_FORCE_COLOR" == 1 ] || [ -t 1 ]; then
 			return 0
 		else
 			return 1
@@ -20,7 +20,7 @@ if type -p NX_FRAMEWORK_SOURCED &>/dev/null; then
 	{
 		local svnapp="$(type -P svn 2>/dev/null)"
 		if ! [ -x "$svnapp" ]; then
-			echo "ERROR: svn command not found!" >&2
+			echo 'ERROR: svn command not found!' >&2
 			return 1
 		fi
 		if [ $# -ge 1 ]; then
@@ -37,10 +37,10 @@ if type -p NX_FRAMEWORK_SOURCED &>/dev/null; then
 			# if we have colordiff and output is either forced or to a terminal
 			if type -P colordiff &>/dev/null && ( [ $iscdiff -eq 1 ] || nx_cdiff_enabled ); then
 				# colordiff the output
-				"$svnapp" --diff-cmd="colordiff" diff "$@"
+				"$svnapp" --diff-cmd='colordiff' diff "$@"
 			else
 				# diff the output
-				"$svnapp" --diff-cmd="diff" diff "$@"
+				"$svnapp" --diff-cmd='diff' diff "$@"
 			fi
 		else
 
@@ -51,9 +51,9 @@ if type -p NX_FRAMEWORK_SOURCED &>/dev/null; then
 	nx_diff_wrapper()
 	{
 		if nx_cdiff_enabled; then
-			local applist="colordiff diff"
+			local applist='colordiff diff'
 		else
-			local applist="diff"
+			local applist='diff'
 		fi
 		for app in $applist
 		do
@@ -63,7 +63,7 @@ if type -p NX_FRAMEWORK_SOURCED &>/dev/null; then
 				return $?
 			fi
 		done
-		echo "ERROR: diff command not found!" >&2
+		echo 'ERROR: diff command not found!' >&2
 		return 1
 	}	
 
