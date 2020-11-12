@@ -227,7 +227,7 @@ export SCONSFLAGS="-j $CPU_CORES"
 unset CPU_CORES
 
 # Load local scripts
-for f in "$NX_LIBRARY_PATH/local/bashrc"
+for f in "$NX_LIBRARY_PATH/local/bashrc.d"/*
 do
   [ -r "$f" ] && source "$f"
 done

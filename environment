@@ -110,7 +110,7 @@ nx_remove_duplicates_delimited()
 export PATH="$(nx_remove_duplicates_delimited ":" ":" "$PATH")"
 
 # source local version, if present
-for benv_f in "$HOME/.bash/local/environment"
+for benv_f in "$HOME/.bash/local/environment.d"/*
 do
 	[ -r "$benv_f" ] && source "$benv_f"
 done
