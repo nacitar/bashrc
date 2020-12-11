@@ -1,131 +1,102 @@
 #!/bin/env bash
 
-# source the environment settings if present (PATH, and others, live there)
-[ -r "$HOME/.bash/environment" ] && source "$HOME/.bash/environment"
+# if a system has something like "alias mem='top', making a function like 'mem()' actually
+# results in making 'top()' so we fix that by dealiasing before creating functions.
+unalias nx_dealias &>/dev/null
+unset -f nx_dealias &>/dev/null
+nx_dealias() {
+    unalias "$@" &>/dev/null
+    unset -f "$@" &>/dev/null
+}
+nx_dealias nx_error
+nx_error() {
+    echo "[ERROR] $@" >&2
+}
+# exit code indicates success, output is the command name 
+nx_dealias nx_path_search
+nx_path_search() {
+    if [ $# -ne 1 ]; then
+        nx_error 'usage: nx_path_search <filename_path_string>'
+        return 1
+    fi
+    type -P "$@" 2>/dev/null
+}
+# same as path_search, but with a custom PATH 
+nx_dealias nx_path_search_custom
+nx_path_search_custom() {
+    if [ $# -ne 2 ]; then
+        nx_error 'usage: nx_path_search_custom <filename_path_string> <search_path>'
+        return 1
+    fi
+    local filename="$1"
+    shift
+    PATH="$@" nx_path_search "$filename"
+}
+# runs the actual binary even if an alias is masking it
+nx_dealias nx_nonaliased
+nx_nonaliased() {
+    local cmd="$1"
+    shift
+    local realapp="$(nx_path_search "$cmd")"
+    if ! [ -x "$realapp" ]; then
+        nx_error "$cmd command not found"
+        return 1
+    fi
+    "$realapp" "$@"
+}
+nx_dealias nx_library
+nx_library() {
+    local f
+    local varname
+    for f in "$@"; do
+        varname="NX_LIB_SOURCED_${f}"
+        if ! [ type -p "$varname" &>/dev/null ]; then
+            # create the function used to determine if a library has been loaded
+            eval "${varname}() { return 0; }" &>/dev/null
+            local filename="$NX_LIBRARY_PATH/lib/$f"
+            [ -r "$filename" ] && source "$filename" || nx_error "library file \"$f\" could not be sourced." 
+        fi
+    done
+}
+# Colorize ls output per the system settings
+nx_dealias nx_dircolors
+nx_dircolors() {
+    local f
+    # enable color support of ls
+    if type -P dircolors &>/dev/null; then
+        # use the first file found, otherwise the defaults
+        for f in "$HOME/.dircolors" /etc/DIR_COLORS /etc/dircolors ''
+        do
+            if [ -r "$f" ]; then eval "$(dircolors -b "$f")"; break; fi
+        done
+        # if we made it to the empty string, we never found one, so use defaults
+        [ -z "$f" ] && eval "$(dircolors -b)"
+    fi
+}
+# Enable bash completion
+nx_dealias nx_bash_completion
+nx_bash_completion() {
+    local f
+    # source the first system bash completion script that we find
+    for f in /etc/profile.d/bash{-,_}completion{.sh,} /etc/bash_completion
+    do
+        if [ -r "$f" ]; then
+            source "$f"
+            break
+        fi
+    done
 
-# if the shell is non-interactive
-if [ -z "$NX_INTERACTIVE_SHELL" ]; then
-	# set by the environment to simplify the path; unset here if we're non-interactive
-	unalias nx_remove_duplicates_delimited &>/dev/null
-	# bail
-	return
-fi
-
-# if the NX_FRAMEWORK_SOURCED alias is not defined, then assume we aren't loaded
-if ! type -p NX_FRAMEWORK_SOURCED &>/dev/null; then
-
-	# if a system has something like "alias mem='top', making a function like 'mem()' actually
-	# results in making 'top()' so we fix that by dealiasing before creating functions.
-	unalias nx_dealias &>/dev/null
-	nx_dealias()
-	{
-		unalias "$@" &>/dev/null
-		unset -f "$@" &>/dev/null
-	}
-
-	# mac compatibility
-	nx_dealias nx_ls
-	nx_ls()
-	{
-		if type -P gls &>/dev/null; then
-			gls "$@"
-		else
-			ls "$@"
-		fi
-	}
-	nx_dealias nx_readlink
-	nx_readlink()
-	{
-		if type -P greadlink &>/dev/null; then
-			greadlink "$@"
-		else
-			readlink "$@"
-		fi
-	}
-
-	# create the function used to know if we're loaded
-	nx_dealias NX_FRAMEWORK_SOURCED
-	NX_FRAMEWORK_SOURCED()	{ return 0; }
-
-	nx_dealias nx_error
-	nx_error()
-	{
-		echo "[ERROR] $@" >&2
-	}
-	nx_dealias nx_isnum
-	nx_isnum()
-	{
-		if [ "$1" -eq "$1" ] 2>/dev/null; then
-			return 0
-		fi
-		return 1
-	}
-	nx_dealias nx_library
-	nx_library()
-	{
-		local f
-		local varname
-		for f in "$@"; do
-
-			varname="NX_LIB_SOURCED_${f}"
-			if ! [ type -p "$varname" &>/dev/null ]; then
-				# create the function used to determine if a library has been loaded
-				eval "${varname}() { return 0; }" &>/dev/null
-				local filename="$NX_LIBRARY_PATH/lib/$f"
-				[ -r "$filename" ] && source "$filename" || nx_error "library file \"$f\" could not be sourced." 
-			fi
-		done
-	}
-
-	nx_dealias nx_interactive_shell
-	nx_interactive_shell()
-	{
-		[ -n "$NX_INTERACTIVE_SHELL" ];
-	}
-
-
-	# Colorize ls output per the system settings
-	nx_dealias nx_dircolors
-	nx_dircolors()
-	{
-		local f
-		# enable color support of ls
-		if type -P dircolors &>/dev/null; then
-			# use the first file found, otherwise the defaults
-			for f in "$HOME/.dircolors" '/etc/DIR_COLORS' '/etc/dircolors' ''
-			do
-				if [ -r "$f" ]; then eval "$(dircolors -b "$f")"; break; fi
-			done
-			# if we made it to the empty string, we never found one, so use defaults
-			[ -z "$f" ] && eval "$(dircolors -b)"
-		fi
-	}
-
-	# Enable bash completion
-	nx_dealias nx_bash_completion
-	nx_bash_completion()
-	{
-		local f
-		# source the first system bash completion script that we find
-		for f in /etc/profile.d/bash{-,_}completion{.sh,} /etc/bash_completion
-		do
-			if [ -r "$f" ]; then
-				source "$f"
-				break
-			fi
-		done
-
-		# Allow tab completion after sudo
-		complete -cf sudo
-	}
-
-	# Detect OS
-	nx_dealias nx_os
-	nx_os()
-	{
-		if type -P uname &>/dev/null; then
-			uname
-		fi
-	}
-
-fi
+    # Allow tab completion after sudo
+    complete -cf sudo
+}
+nx_dealias nx_has_sed
+nx_has_sed() {
+    nx_path_search sed &>/dev/null
+}
+nx_dealias nx_isnum
+nx_isnum() {
+    if [ "$1" -eq "$1" ] &>/dev/null; then
+        return 0
+    fi
+    return 1
+}

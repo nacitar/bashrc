@@ -1,126 +1,44 @@
 #!/bin/bash
 
+# exit if no library path specified
+[ -d "$NX_LIBRARY_PATH" ] || return
 
-# check for an interactive shell
-case $- in
-	*i*) # interactive shell
-		export NX_INTERACTIVE_SHELL=1
-		;;
-esac
-
-
-# if there's no valid library path yet
-if ! [ -d "$NX_LIBRARY_PATH" ]; then
-	# if we can use bash 3 features
-	if [ -n "$BASH_SOURCE" ]; then
-		# try to get the path to the library files
-		NX_LIBRARY_PATH="$PWD/$(dirname "$BASH_SOURCE")"
-	fi
-
-	if ! [ -d "$NX_LIBRARY_PATH" ]; then
-		# if we didn't find a path, revert to the default
-		export NX_LIBRARY_PATH="$HOME/.bash"
-	else
-		# if we did find it, export it
-		export NX_LIBRARY_PATH
-	fi
+if [ -r /etc/profile ] then
+    source /etc/profile
 fi
+for NX_TEMPVAR in /etc/{bash/bashrc,bash.bashrc,bashrc}
+do
+    if [ -r "$NX_TEMPVAR" ]; then
+        source "$NX_TEMPVAR"
+        break  # only the first one found
+    fi
+done
+# directories to add to path, in reverse order of priority; the rightmost/last entry will come first
+for NX_TEMPVAR in /opt/bin /opt/sbin /bin /sbin /usr/bin /usr/sbin /opt/local/bin /opt/local/sbin /usr/local/bin /usr/local/sbin
+do
+    # if it exists and isn't already in PATH
+    if [[ -d "$NX_TEMPVAR" && ! "$PATH" =~ (^|:)$NX_TEMPVAR/?(:|$) ]]; then 
+        export PATH="$NX_TEMPVAR:$PATH"
+    fi
+done
+# add home locations even if they don't exist
+export PATH="$HOME/bin:$PATH"
+export LD_LIBRARY_PATH="$HOME/lib:$LD_LIBRARY_PATH"
 
-# set variable identifying the chroot you work in (used in the prompt below)
+# determine if in a chroot
 export NX_CHROOT="$debian_chroot"
 if [ -z "$NX_CHROOT" ] && [ -r '/etc/debian_chroot' ]; then
 	export NX_CHROOT="$(cat /etc/debian_chroot)"
 fi
 
-# get the environment set up properly
-for benv_f in /etc/profile # add others here
-do
-	[ -r "$benv_f" ] && source "$benv_f"
-done
-
-# source the first global definition file we find, so we can override as
-# necessary
-for benv_f in /etc/{bash/bashrc,bash.bashrc,bashrc}
-do
-	if [ -r "$benv_f" ]; then source "$benv_f"; break; fi
-done
-
-# add system and user bins to path (may already be there, but this makes sure)
-export PATH="/usr/local/sbin:/usr/local/bin:/opt/local/sbin:/opt/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/sbin:/opt/bin:$PATH"
-
-# if we got here from sudo, add that user's home bin path as well
-if [ -n "$SUDO_USER" ] && eval [ -d "~$SUDO_USER" ]; then
-	eval export PATH="~$SUDO_USER/bin:$PATH"
-fi
-
-# put our home bin path at the beginning.
-export PATH="$HOME/bin:$PATH"
-
-export LD_LIBRARY_PATH="$HOME/lib:$LD_LIBRARY_PATH"
-
-# set the editors
-if type -P nvim &>/dev/null; then
-	export SVN_EDITOR='nvim'
-	export EDITOR='nvim'
-	export VISUAL='nvim'
-else
-	export SVN_EDITOR='vim'
-	export EDITOR='vim'
-	export VISUAL='vim'
-fi
-
-export PAGER='less -R'
-
-# let java antialias fonts correctly
-export _JAVA_OPTIONS='-Dswing.aatext=true -Dawt.useSystemAAFontSettings=lcd'
-
-# where our android tools live
-export ANDROID_HOME='/opt/android-sdk-update-manager'
-
-# removes later-duplicates from a delimited list, and allows specifying a new delimiter.
-unalias nx_remove_duplicates_delimited &>/dev/null
-nx_remove_duplicates_delimited()
-{
-	if [ $# -ne 3 ]; then
-		echo 'usage: remove_duplicates_delimited <input_delimiter> <output_delimiter> <delimited_data>' 1>&2
-		return 1
-	fi
-	local in_delim="$1"
-	local out_delim="$2"
-	local delim_data="$3"
-
-	local i
-	local j
-	local path_array
-	IFS="$in_delim" read -r -a path_array <<< "$delim_data"
-
-	local path_count=${#path_array[@]}
-	for (( i = 0 ; i < $path_count ; i++ ))
-	do
-		if [ "${path_array[$i]}" == "$in_delim" ]; then
-			unset path_array[$i]
-		else
-			for (( j = $(($i+1)) ; $j < $path_count ; j++ ))
-			do
-				if [ "${path_array[$i]}" == "${path_array[$j]}" ]; then
-					# mark it for deletion
-					path_array[$j]="$in_delim"
-				fi
-			done
-		fi
-	done
-	echo "$(IFS="$out_delim"; echo "${path_array[*]}")"
-}
-
-# remove later duplicates from PATH
-export PATH="$(nx_remove_duplicates_delimited ':' ':' "$PATH")"
-
 # source local version, if present
-for benv_f in "$HOME/.bash/local/environment.d"/*
+for NX_TEMPVAR in "$NX_LIBRARY_PATH/local/environment.d"/*
 do
-	[ -r "$benv_f" ] && source "$benv_f"
+	if [ -r "$NX_TEMPVAR" ]; then
+        source "$NX_TEMPVAR"
+    fi
 done
 
-# clear used values
-unset benv_f
+# less variable pollution
+unset NX_TEMPVAR
 

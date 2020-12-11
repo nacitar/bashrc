@@ -1,70 +1,31 @@
 #!/bin/env bash
 
-# if the framework is sourced
-if type -p NX_FRAMEWORK_SOURCED &>/dev/null; then
-
-	nx_library 'platform'
-
-	nx_dealias nx_cdiff_enabled
-	nx_cdiff_enabled()
-	{
-		# force if output is to terminal
-		if [ "$CDIFF_FORCE_COLOR" == 1 ] || [ -t 1 ]; then
-			return 0
-		else
-			return 1
-		fi
-	}
-	nx_dealias nx_svn_wrapper
-	nx_svn_wrapper()
-	{
-		local svnapp="$(type -P svn 2>/dev/null)"
-		if ! [ -x "$svnapp" ]; then
-			echo 'ERROR: svn command not found!' >&2
-			return 1
-		fi
-		if [ $# -ge 1 ]; then
-			local iscdiff=0
-			case "$1" in
-				cdiff|colordiff|diffc) iscdiff=1 ;;
-				diff) ;;
-				*) # unknown command, just execute it
-					"$svnapp" "$@"
-					return $?
-				;;
-			esac
-			shift 1
-			# if we have colordiff and output is either forced or to a terminal
-			if type -P colordiff &>/dev/null && ( [ $iscdiff -eq 1 ] || nx_cdiff_enabled ); then
-				# colordiff the output
-				"$svnapp" --diff-cmd='colordiff' diff "$@"
-			else
-				# diff the output
-				"$svnapp" --diff-cmd='diff' diff "$@"
-			fi
-		else
-
-			"$svnapp" "$@"
-		fi
-	}
-	nx_dealias nx_diff_wrapper
-	nx_diff_wrapper()
-	{
-		if nx_cdiff_enabled; then
-			local applist='colordiff diff'
-		else
-			local applist='diff'
-		fi
-		for app in $applist
-		do
-			local diffapp="$(type -P $app 2>/dev/null)";
-			if [ -x "$diffapp" ]; then
-				"$diffapp" "$@"
-				return $?
-			fi
-		done
-		echo 'ERROR: diff command not found!' >&2
-		return 1
-	}	
-
-fi
+nx_dealias nx_cdiff_enabled
+nx_cdiff_enabled()
+{
+    # force if output is to terminal
+    if [ "$CDIFF_FORCE_COLOR" == 1 ] || [ -t 1 ]; then
+        return 0
+    else
+        return 1
+    fi
+}
+nx_dealias nx_diff_wrapper
+nx_diff_wrapper()
+{
+    if nx_cdiff_enabled; then
+        local applist='colordiff diff'
+    else
+        local applist='diff'
+    fi
+    for app in $applist
+    do
+        local diffapp="$(nx_path_search $app)";
+        if [ -x "$diffapp" ]; then
+            "$diffapp" "$@"
+            return $?
+        fi
+    done
+    echo 'ERROR: diff command not found!' >&2
+    return 1
+}	

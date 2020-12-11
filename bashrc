@@ -18,14 +18,87 @@
 #
 ###########################################################
 
-# Load the nx bash framework, or bail
-unset -f NX_FRAMEWORK_SOURCED &>/dev/null
-[ -r "$HOME/.bash/framework" ] && source "$HOME/.bash/framework" &>/dev/null || return
+# Allow system override of the path
+if ! [ -d "$NX_LIBRARY_PATH" ]; then
+    export NX_LIBRARY_PATH="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
+fi
+# Extra care to make sure non-interactive doesn't fail with missing scripts
+if [ -d "$NX_LIBRARY_PATH/environment" ]; then
+    source "$NX_LIBRARY_PATH/environment"
+fi
+if [[ $- != *i* ]]; then
+    return  # shell is non-interactive; bail
+fi
+
+if ! [ -d "$NX_LIBRARY_PATH" ]; then
+    echo "[ERROR] NX_LIBRARY_PATH is invalid: $NX_LIBRARY_PATH" >&2
+    return  # bail, library can't be found
+fi
+
+# Load the framework, or bail
+source "$NX_LIBRARY_PATH/framework" || return
+
 
 ############
 # LIBARIES #
 ############
-nx_library "termops" "tmux" "platform" "cdiff" "ssh_key" "util"
+nx_library termops tmux cdiff util
+
+
+###############
+# ENVIRONMENT #
+###############
+
+# Disable terminal blanking
+setterm -blank 0 &>/dev/null
+setterm -powersave off &>/dev/null
+setterm -powerdown 0 &>/dev/null
+# force ignoredups and ignorespace
+export HISTCONTROL=ignoreboth
+# append to the history file, don't overwrite it
+shopt -s histappend
+# check the window size after each command and, if necessary, update the values of LINES and COLUMNS.
+shopt -s checkwinsize
+# disable history expansion so we can use ! in strings and filenames
+set +H
+
+# Get the number of CPU cores, if possible
+export NX_CPU_CORES=$(grep "^processor" /proc/cpuinfo 2>/dev/null | wc -l)
+if ! nx_isnum "$NX_CPU_CORES"; then
+    export NX_CPU_CORES=2  # default
+fi
+export NX_BUILD_CORES=$(($NX_CPU_CORES + 1))  # one extra
+
+# set the editors
+if nx_path_search nvim &>/dev/null; then
+	export SVN_EDITOR='nvim'
+	export EDITOR='nvim'
+	export VISUAL='nvim'
+else
+	export SVN_EDITOR='vim'
+	export EDITOR='vim'
+	export VISUAL='vim'
+fi
+export PAGER='less -R'
+
+# Make aliases for directory listing
+export NX_LS_DEF_FLAGS=''
+# Check for alphabetical extension sorting support
+if ls -X /dev/null &>/dev/null; then
+  export NX_LS_DEF_FLAGS="$NX_LS_DEF_FLAGS -X"
+fi
+# Check for directory grouping support
+if ls --group-directories-first /dev/null &>/dev/null; then
+  export NX_LS_DEF_FLAGS="$NX_LS_DEF_FLAGS --group-directories-first"
+fi
+
+# If color is supported, we want to always use color where this flag is used.
+if nx_tput_terminfo_colors &>/dev/null; then
+    export NX_COLOR_FLAG='--color=always'
+else
+    export NX_COLOR_FLAG='--color=auto'
+fi
+
 
 ##############
 # TERM FIXES #
@@ -43,26 +116,6 @@ nx_dircolors
 # enable bash completion
 nx_bash_completion
 
-###############
-# INTERACTIVE #
-###############
-
-# force ignoredups and ignorespace
-export HISTCONTROL=ignoreboth
-
-# append to the history file, don't overwrite it
-shopt -s histappend
-
-# check the window size after each command and, if necessary, update the values of LINES and COLUMNS.
-shopt -s checkwinsize
-
-# disable history expansion so we can use ! in strings and filenames
-set +H
-
-# Disable terminal blanking
-setterm -blank 0 &>/dev/null
-setterm -powersave off &>/dev/null
-setterm -powerdown 0 &>/dev/null
 
 ##########
 # PROMPT #
@@ -89,43 +142,12 @@ esac
 # ALIASES #
 ###########
 
-# We don't want to force color if the output isn't to a terminal however we
-# also don't want to have to do something special to force it when we want it.
-# If we 'source' a script, it could be problematic.  However, any sane script
-# would use 'ls' rather than any of the ll/etc.. derivatives, thus it should be
-# safe to force color for the other aliases.
-
-
-# If color is supported, we want to always use color where this flag is used.
-if [ "$(nx_os)" == 'Darwin' ]; then
-  nx_auto_color_flag='-G'
-  nx_color_flag='-G'
-else
-  nx_auto_color_flag='--color=auto'
-  if nx_tput_terminfo_colors &>/dev/null; then
-    nx_color_flag='--color=always'
-  else
-    nx_color_flag='--color=auto'
-  fi
-fi
-
 # Alias to trim whitespace
 alias trim='sed -e "s/^[[:space:]]*//;s/[[:space:]]*$//"'
 
-# Make aliases for directory listing
-LS_DEF_FLAGS=''
-# Check for alphabetical extension sorting support
-if ls -X /dev/null &>/dev/null; then
-  LS_DEF_FLAGS="$LS_DEF_FLAGS -X"
-fi
-# Check for directory grouping support
-if ls --group-directories-first /dev/null &>/dev/null; then
-  LS_DEF_FLAGS="$LS_DEF_FLAGS --group-directories-first"
-fi
-
 # List files and directories
-alias ls="nx_ls $nx_auto_color_flag $LS_DEF_FLAGS"
-alias l="ls -F $nx_color_flag"
+alias ls="ls --color=auto $NX_LS_DEF_FLAGS"
+alias l="ls -F $NX_COLOR_FLAG"
 alias la='l -A'
 alias ll='l -l'
 alias lal='l -Al'
@@ -149,9 +171,9 @@ alias diffc='CDIFF_FORCE_COLOR=1 nx_diff_wrapper'
 alias svn='nx_svn_wrapper'
 
 # grep (force colorizing match string)
-alias grepc="grep $color_flag"
-alias fgrepc="fgrep $color_flag"
-alias egrepc="egrep $color_flag"
+alias grepc="grep $NX_COLOR_FLAG"
+alias fgrepc="fgrep $NX_COLOR_FLAG"
+alias egrepc="egrep $NX_COLOR_FLAG"
 
 # grep (no colorizing match string)
 alias grep='grep --color=none'
@@ -216,29 +238,16 @@ if nx_path_search eix &>/dev/null; then
 	alias eixc='eix --force-color'
 fi
 
-# Cleanup
-unset color_flag
-
-# Get the number of CPU cores, if possible
-CPU_CORES=$(grep "^processor" /proc/cpuinfo 2>/dev/null | wc -l)
-
-# If the number of cores is actually a number
-if [ "$CPU_CORES" = "$[CPU_CORES+0]" ]; then
-  # add one to it
-  CPU_CORES=$[CPU_CORES+1]
-else
-  # Default to 2
-  CPU_CORES=2
-fi
-
 # Set the number of cores to use in make and scons
-alias make="make -j $CPU_CORES"
-export SCONSFLAGS="-j $CPU_CORES"
-unset CPU_CORES
+alias make="make -j $NX_BUILD_CORES"
 
 # Load local scripts
-for f in "$NX_LIBRARY_PATH/local/bashrc.d"/*
+for NX_TEMPVAR in "$NX_LIBRARY_PATH/local/bashrc.d"/*
 do
-  [ -r "$f" ] && source "$f"
+	if [ -r "$NX_TEMPVAR" ]; then
+        source "$NX_TEMPVAR"
+    fi
 done
-unset f
+
+# less variable pollution
+unset NX_TEMPVAR
