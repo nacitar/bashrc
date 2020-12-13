@@ -1,8 +1,11 @@
 #!/bin/env bash
 
 nx_dealias() {
-    unalias "$@" &>/dev/null
-    unset -f "$@" &>/dev/null
+    while (( "$#" )); do
+        unalias "$1" &>/dev/null
+        unset -f "$1" &>/dev/null
+        shift
+    done
 }
 nx_error() {
     echo "[ERROR] $@" >&2
@@ -31,8 +34,7 @@ nx_nonaliased() {
     shift
     local realapp="$(nx_path_search "$cmd")"
     if ! [ -x "$realapp" ]; then
-        nx_error "$cmd command not found"
-        return 1
+        realapp="$cmd"  # just use what was provided
     fi
     "$realapp" "$@"
 }
@@ -52,14 +54,18 @@ nx_library() {
 nx_enable_dircolors() {
     local f
     # enable color support of ls
-    if type -P dircolors &>/dev/null; then
+    if nx_path_search dircolors &>/dev/null; then
         # use the first file found, otherwise the defaults
         for f in "$HOME/.dircolors" /etc/DIR_COLORS /etc/dircolors ''
         do
-            if [ -r "$f" ]; then eval "$(dircolors -b "$f")"; break; fi
+            if [ -z "$f" ]; then
+                eval "$(nx_nonaliased dircolors -b)"  # defaults
+                break
+            elif [ -r "$f" ]; then
+                eval "$(nx_nonaliased dircolors -b "$f")"  # from a file
+                break
+            fi
         done
-        # if we made it to the empty string, we never found one, so use defaults
-        [ -z "$f" ] && eval "$(dircolors -b)"
     fi
 }
 nx_enable_bash_completion() {

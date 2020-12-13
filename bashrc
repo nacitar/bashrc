@@ -100,29 +100,19 @@ alias b='bare'
 alias diff='nx_diff_wrapper'
 alias diffc='CDIFF_FORCE_COLOR=1 nx_diff_wrapper'
 
-# enable svn wrapper that handles colordiff/cdiff and automatically colorizes
-# diff if outputting to a terminal
-alias svn='nx_svn_wrapper'
+# remove any system aliases for grep
+nx_dealias grep fgrep egrep
+# grep with color forced
+alias grepc='grep --color=always'
+alias fgrepc='fgrep --color=always'
+alias egrepc='egrep --color=always'
 
-# grep (force colorizing match string)
-alias grepc="grep $NX_COLOR_FLAG"
-alias fgrepc="fgrep $NX_COLOR_FLAG"
-alias egrepc="egrep $NX_COLOR_FLAG"
-
-# grep (no colorizing match string)
-alias grep='grep --color=none'
-alias fgrep='fgrep --color=none'
-alias egrep='egrep --color=none'
-
-# a version of less that supports color output
+# enable colors in less 
 alias less='less -R'
-
-# less provides better usability than more
 alias more='less'
 alias m='less'
 
 # Directory traversal
-alias cd..='cd ..'
 alias s='cd ..'
 alias p='cd -'
 
@@ -132,7 +122,7 @@ alias rd='rmdir'
 alias c='clear'
 alias n='yes "" | head -n"${LINES:=100}"'
 
-# Misc
+# Editors
 if nx_path_search nvim &>/dev/null; then
 	alias vi='nvim'
 	alias vim='nvim'
@@ -143,13 +133,11 @@ else
 	alias view='vim -R'
 fi
 alias emacs='emacs -nw'
-alias df='df -h'
-alias du='du -h'
 alias dict='nx_dict'
 
 # sudo preserves environment, rsudo gives the original sudo if you find this undesirable. 
-alias rsudo='nx_nonaliased sudo'
 alias sudo='sudo -E'
+alias rsudo='nx_nonaliased sudo'
 
 # Memory
 # Output: kb pid args
