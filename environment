@@ -1,9 +1,8 @@
 #!/bin/bash
 
-# exit if no library path specified
-[ -d "$NX_LIBRARY_PATH" ] || return
+NX_LIBRARY_PATH="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
 
-if [ -r /etc/profile ] then
+if [ -r /etc/profile ]; then
     source /etc/profile
 fi
 for NX_TEMPVAR in /etc/{bash/bashrc,bash.bashrc,bashrc}
@@ -13,7 +12,7 @@ do
         break  # only the first one found
     fi
 done
-# directories to add to path, in reverse order of priority; the rightmost/last entry will come first
+# Directories to add to path, in reverse order of priority; the rightmost/last entry will come first
 for NX_TEMPVAR in /opt/bin /opt/sbin /bin /sbin /usr/bin /usr/sbin /opt/local/bin /opt/local/sbin /usr/local/bin /usr/local/sbin
 do
     # if it exists and isn't already in PATH
@@ -21,24 +20,23 @@ do
         export PATH="$NX_TEMPVAR:$PATH"
     fi
 done
-# add home locations even if they don't exist
+# Add home locations even if they don't exist
 export PATH="$HOME/bin:$PATH"
 export LD_LIBRARY_PATH="$HOME/lib:$LD_LIBRARY_PATH"
 
-# determine if in a chroot
-export NX_CHROOT="$debian_chroot"
+# Determine if in a chroot
+NX_CHROOT="$debian_chroot"
 if [ -z "$NX_CHROOT" ] && [ -r '/etc/debian_chroot' ]; then
-	export NX_CHROOT="$(cat /etc/debian_chroot)"
+	NX_CHROOT="$(cat /etc/debian_chroot)"
 fi
 
-# source local version, if present
+# Source local environment scripts 
 for NX_TEMPVAR in "$NX_LIBRARY_PATH/local/environment.d"/*
 do
-	if [ -r "$NX_TEMPVAR" ]; then
+    if [ -r "$NX_TEMPVAR" ]; then
         source "$NX_TEMPVAR"
     fi
 done
 
-# less variable pollution
+# Less variable pollution
 unset NX_TEMPVAR
-

@@ -1,13 +1,10 @@
 #!/bin/env bash
 
-nx_dealias nx_stringize_escape
 nx_stringize_escape() {
     echo "${@//$'\e'/\\e}"
 }
-
 # <dir> <desired max length>
 # 0 for max compression, -1 for home-replace only
-nx_dealias nx_abbreviate_dir
 nx_abbreviate_dir() {
     local IFS=/ c=1 n d r p s
     p=( ${1/#$HOME/\~} )

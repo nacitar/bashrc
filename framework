@@ -1,19 +1,13 @@
 #!/bin/env bash
 
-# if a system has something like "alias mem='top', making a function like 'mem()' actually
-# results in making 'top()' so we fix that by dealiasing before creating functions.
-unalias nx_dealias &>/dev/null
-unset -f nx_dealias &>/dev/null
 nx_dealias() {
     unalias "$@" &>/dev/null
     unset -f "$@" &>/dev/null
 }
-nx_dealias nx_error
 nx_error() {
     echo "[ERROR] $@" >&2
 }
 # exit code indicates success, output is the command name 
-nx_dealias nx_path_search
 nx_path_search() {
     if [ $# -ne 1 ]; then
         nx_error 'usage: nx_path_search <filename_path_string>'
@@ -22,7 +16,6 @@ nx_path_search() {
     type -P "$@" 2>/dev/null
 }
 # same as path_search, but with a custom PATH 
-nx_dealias nx_path_search_custom
 nx_path_search_custom() {
     if [ $# -ne 2 ]; then
         nx_error 'usage: nx_path_search_custom <filename_path_string> <search_path>'
@@ -33,7 +26,6 @@ nx_path_search_custom() {
     PATH="$@" nx_path_search "$filename"
 }
 # runs the actual binary even if an alias is masking it
-nx_dealias nx_nonaliased
 nx_nonaliased() {
     local cmd="$1"
     shift
@@ -44,7 +36,6 @@ nx_nonaliased() {
     fi
     "$realapp" "$@"
 }
-nx_dealias nx_library
 nx_library() {
     local f
     local varname
@@ -58,9 +49,7 @@ nx_library() {
         fi
     done
 }
-# Colorize ls output per the system settings
-nx_dealias nx_dircolors
-nx_dircolors() {
+nx_enable_dircolors() {
     local f
     # enable color support of ls
     if type -P dircolors &>/dev/null; then
@@ -73,9 +62,7 @@ nx_dircolors() {
         [ -z "$f" ] && eval "$(dircolors -b)"
     fi
 }
-# Enable bash completion
-nx_dealias nx_bash_completion
-nx_bash_completion() {
+nx_enable_bash_completion() {
     local f
     # source the first system bash completion script that we find
     for f in /etc/profile.d/bash{-,_}completion{.sh,} /etc/bash_completion
@@ -89,12 +76,10 @@ nx_bash_completion() {
     # Allow tab completion after sudo
     complete -cf sudo
 }
-nx_dealias nx_has_sed
 nx_has_sed() {
     nx_path_search sed &>/dev/null
 }
-nx_dealias nx_isnum
-nx_isnum() {
+nx_is_integral() {
     if [ "$1" -eq "$1" ] &>/dev/null; then
         return 0
     fi

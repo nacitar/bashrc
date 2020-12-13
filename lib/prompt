@@ -1,0 +1,56 @@
+#!/bin/env bash
+
+nx_library tput tmux stringops
+
+# A one time check to see we're running as the same user as tmux
+if nx_in_tmux_session && [ $UID -eq "$(nx_get_tmux_pid)" ]; then
+    NX_IS_TMUX_USER=1
+fi
+
+nx_bash_prompt() {
+    # enclosing all escape sequences with \[ \] so it doesn't contribute to the line's character count
+    local ESTAT="\$(ECODE=\$?; [ \$ECODE -eq 0 ] && echo '\[$(nx_tput_term_fg 4)\]' || echo '\[$(nx_tput_term_fg 1)\]'; exit \$ECODE)"
+
+    # Root prompt ends with #, non-root ends with $
+    local DIVCHR="\$(ECODE=\$?; [ \"\$EUID\" -eq 0 ] && echo '#' || echo '\$'; exit \$ECODE)"
+
+    # actual prompt
+    # [user@host dir]# 
+    if [ $(nx_tput_colors) -ge 8 ]; then
+        # there's at least 8 colors
+        echo "\[$(nx_tput_term_normal)\]${NX_CHROOT:+($NX_CHROOT)}${ESTAT}\[$(nx_tput_term_bold)\][\[$(nx_tput_term_normal)$(nx_tput_term_fg 2)\]\u@\h \[$(nx_tput_term_fg 6)$(nx_tput_term_bold)\]\w${ESTAT}]${DIVCHR}\[$(nx_tput_term_normal)\] "
+    else
+        echo "${NX_CHROOT:+($NX_CHROOT)}[\u@\h \w]${DIVCHR} "
+    fi
+}
+nx_set_bash_prompt() {
+    unset PROMPT_COMMAND
+    PS1="$(nx_bash_prompt)"
+}
+nx_prompt_command_for_tmux_titles() {
+    local shortpath="$(nx_abbreviate_dir "$PWD" 0)"
+    local longpath="$(nx_abbreviate_dir "$PWD" -1)"
+
+    local hostprefix="$USER@${HOSTNAME%%.*}: "
+    local windowprefix
+    # if we aren't the tmux user, or we're ssh'd over somewhere, add the host info
+    [ ${NX_IS_TMUX_USER:-0} -eq 1 ] || [ -n "$SSH_CLIENT" ] && windowprefix="$hostprefix" || windowprefix=''
+
+    nx_set_tmux_pane_title "$hostprefix$longpath"
+    nx_set_tmux_window_name "$windowprefix$shortpath"
+}
+nx_set_titles_with_prompt() {
+    # set window and tmux titles too
+    case "$TERM" in
+      # If this is an xterm set the title to user@host:dir
+      xterm*|rxvt*)
+        PS1="\[\e]0;${NX_CHROOT:+($NX_CHROOT)}\u@\h: \w\a\]$PS1"
+        ;;
+      # If this is a tmux session, set the window title.
+      screen*)
+        if nx_in_tmux_session; then
+            PROMPT_COMMAND='nx_prompt_command_for_tmux_titles'
+        fi
+        ;;
+    esac
+}

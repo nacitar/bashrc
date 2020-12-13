@@ -1,19 +1,8 @@
 #!/bin/env bash
 
-nx_dealias nx_cdiff_enabled
-nx_cdiff_enabled()
-{
-    # force if output is to terminal
+nx_diff_wrapper() {
+    # wrap diff to use colordiff if it's available
     if [ "$CDIFF_FORCE_COLOR" == 1 ] || [ -t 1 ]; then
-        return 0
-    else
-        return 1
-    fi
-}
-nx_dealias nx_diff_wrapper
-nx_diff_wrapper()
-{
-    if nx_cdiff_enabled; then
         local applist='colordiff diff'
     else
         local applist='diff'
