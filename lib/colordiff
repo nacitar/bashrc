@@ -1,20 +1,21 @@
 #!/bin/env bash
 
 nx_diff_wrapper() {
-    # wrap diff to use colordiff if it's available
-    if [ "$CDIFF_FORCE_COLOR" == 1 ] || [ -t 1 ]; then
-        local applist='colordiff diff'
-    else
-        local applist='diff'
+  # wrap diff to use colordiff if it's available
+  local applist
+  if [[ "${CDIFF_FORCE_COLOR}" -eq 1 || -t 1 ]]; then
+    applist='colordiff diff'
+  else
+    applist='diff'
+  fi
+  for app in ${applist}; do
+    local diffapp
+    diffapp="$(nx_path_search "${app}")";
+    if [[ -x "${diffapp}" ]]; then
+      "$diffapp" "$*"
+      return $?
     fi
-    for app in $applist
-    do
-        local diffapp="$(nx_path_search $app)";
-        if [ -x "$diffapp" ]; then
-            "$diffapp" "$@"
-            return $?
-        fi
-    done
-    echo 'ERROR: diff command not found!' >&2
-    return 1
+  done
+  echo 'ERROR: diff command not found!' >&2
+  return 1
 }	

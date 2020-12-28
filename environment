@@ -2,40 +2,53 @@
 
 NX_LIBRARY_PATH="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
 
-if [ -r /etc/profile ]; then
-    source /etc/profile
+if [[ -r '/etc/profile' ]]; then
+  source '/etc/profile'
 fi
-for NX_TEMPVAR in /etc/{bash/bashrc,bash.bashrc,bashrc}
-do
-    if [ -r "$NX_TEMPVAR" ]; then
-        source "$NX_TEMPVAR"
-        break  # only the first one found
-    fi
+
+for NX_TEMPVAR in '/etc/bash.bashrc' '/etc/bash/bashrc' '/etc/bashrc'; do
+  if [[ -r "${NX_TEMPVAR}" ]]; then
+    source "${NX_TEMPVAR}"
+    break  # only the first one found
+  fi
 done
-# Directories to add to path, in reverse order of priority; the rightmost/last entry will come first
-for NX_TEMPVAR in /opt/bin /opt/sbin /bin /sbin /usr/bin /usr/sbin /opt/local/bin /opt/local/sbin /usr/local/bin /usr/local/sbin
-do
-    # if it exists and isn't already in PATH
-    if [[ -d "$NX_TEMPVAR" && ! "$PATH" =~ (^|:)$NX_TEMPVAR/?(:|$) ]]; then 
-        export PATH="$NX_TEMPVAR:$PATH"
-    fi
-done
+
+# Add directories to path
+while read -r NX_TEMPVAR; do
+  # if it exists and isn't already in PATH
+  if [[ -d "${NX_TEMPVAR}" && ! "${PATH}" =~ (^|:)${NX_TEMPVAR}/?(:|$) ]]; then 
+    export PATH="${NX_TEMPVAR}:${PATH}"
+  fi
+  # in reverse order of priority; the last entry will come first
+done <<EOF
+/opt/bin
+/opt/sbin
+/bin
+/sbin
+/usr/bin
+/usr/sbin
+/opt/local/bin
+/opt/local/sbin
+/usr/local/bin
+/usr/local/sbin
+EOF
+
 # Add home locations even if they don't exist
-export PATH="$HOME/bin:$PATH"
-export LD_LIBRARY_PATH="$HOME/lib:$LD_LIBRARY_PATH"
+export PATH="${HOME}/bin:${PATH}"
+export LD_LIBRARY_PATH="${HOME}/lib:${LD_LIBRARY_PATH}"
 
 # Determine if in a chroot
-NX_CHROOT="$debian_chroot"
-if [ -z "$NX_CHROOT" ] && [ -r '/etc/debian_chroot' ]; then
-	NX_CHROOT="$(cat /etc/debian_chroot)"
+NX_CHROOT="${debian_chroot:-}"
+if [[ -z "${NX_CHROOT}" && -r '/etc/debian_chroot' ]]; then
+  NX_CHROOT="$(<'/etc/debian_chroot')"
 fi
 
 # Source local environment scripts 
-for NX_TEMPVAR in "$NX_LIBRARY_PATH/local/environment.d"/*
+for NX_TEMPVAR in "${NX_LIBRARY_PATH}/local/environment.d"/*
 do
-    if [ -r "$NX_TEMPVAR" ]; then
-        source "$NX_TEMPVAR"
-    fi
+  if [[ -r "${NX_TEMPVAR}" ]]; then
+    source "${NX_TEMPVAR}"
+  fi
 done
 
 # Less variable pollution

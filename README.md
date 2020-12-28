@@ -16,3 +16,9 @@ git clone git://github.com/nacitar/bashrc.git "$HOME/.bash"
 "$HOME/.bash/install.sh"
 ```
 
+shell check
+===========
+```
+cd "$HOME/.bash"
+shellcheck --shell=bash bashrc environment framework bash_logout bash_profile lib/* --exclude=SC1090,SC1091
+```

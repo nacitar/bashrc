@@ -70,8 +70,9 @@ nx_tput_terminfo_exists() {
     nx_tput_cmd -T"$1" -S </dev/null
 }
 nx_tput_colors() {
-    local value="$(nx_tput_value -1 colors)"
-    local ret=$?
+    local value ret
+    value="$(nx_tput_value -1 colors)"
+    ret=$?
     if [ "$value" == -1 ]; then
         # attempt to use term to find the colors
         case "$TERM" in
@@ -123,7 +124,7 @@ nx_color_test() {
     do
         [ "$fg_color" -lt 10 ] && fg_str=" $fg_color" || fg_str="$fg_color"
         [ "$fg_color" -lt 0 ] && fg_str='fg' && fg_escape_str='' || fg_escape_str="${term_fg[$fg_color]}"
-        echo -en "$fg_str $escape_str$T"
+        echo -en "$fg_str $fg_escape_str$T"
         bg_color=0
         while [ "$bg_color" -lt 16 ];
         do

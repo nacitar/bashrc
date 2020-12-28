@@ -13,7 +13,8 @@
 source "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/environment"
 
 if [[ $- != *i* ]]; then
-    return  # shell is non-interactive; bail
+  # shell is non-interactive; bail
+  return
 fi
 
 source "$NX_LIBRARY_PATH/framework"
@@ -23,43 +24,39 @@ source "$NX_LIBRARY_PATH/framework"
 ############
 nx_library prompt colordiff dict stringops
 
-
 ###############
 # ENVIRONMENT #
 ###############
 
 # xterm/screen/etc.. get promoted to 256color variants if available
 if [[ "$TERM" != *-256color ]] && nx_tput_terminfo_exists "$TERM-256color"; then
-    export TERM="$TERM-256color"
-    nx_tput_init
+  export TERM="$TERM-256color"
+  nx_tput_init
 fi
-
-HISTCONTROL=ignoreboth  # force ignoredups and ignorespace
-shopt -s histappend  # append to the history file, don't overwrite it
-shopt -s checkwinsize  # after each command check the window size and keep LINES and COLUMNS up to date
-set +H  # disable history expansion so we can use ! in strings and filenames
+# force ignoredups and ignorespace
+HISTCONTROL=ignoreboth
+# append to the history file, don't overwrite it
+shopt -s histappend
+# after each command check the window size and keep LINES and COLUMNS up to date
+shopt -s checkwinsize
+# disable history expansion so we can use ! in strings and filenames
+set +H
 
 # set the editors
 if nx_path_search nvim &>/dev/null; then
-	export SVN_EDITOR='nvim'
-	export EDITOR='nvim'
-	export VISUAL='nvim'
+  export SVN_EDITOR='nvim'
+  export EDITOR='nvim'
+  export VISUAL='nvim'
 else
-	export SVN_EDITOR='vim'
-	export EDITOR='vim'
-	export VISUAL='vim'
+  export SVN_EDITOR='vim'
+  export EDITOR='vim'
+  export VISUAL='vim'
 fi
 export PAGER='less -R'
 
-# If color is supported, we want to always use color where this flag is used.
-if nx_tput_colors &>/dev/null; then
-    NX_COLOR_FLAG='--color=always'
-else
-    NX_COLOR_FLAG='--color=auto'
-fi
-
 NX_CPU_CORES=$(grep "^processor" /proc/cpuinfo --count 2>/dev/null)
-NX_BUILD_CORES=$((${NX_CPU_CORES:-2} + 1))  # one extra is usually advised for parallellizing builds
+# one extra is usually advised for parallellizing builds
+NX_BUILD_CORES=$((${NX_CPU_CORES:-2} + 1))
 
 # Disable terminal blanking
 setterm -blank 0 &>/dev/null
@@ -72,16 +69,14 @@ nx_set_titles_with_prompt
 nx_enable_dircolors
 nx_enable_bash_completion
 
-
 ###########
 # ALIASES #
 ###########
 
-# Alias to trim whitespace
 alias trim='sed -e "s/^[[:space:]]*//;s/[[:space:]]*$//"'
 
-# List files and directories
-alias ls='ls --color=auto -X --group-directories-first'  # -X: sort by extension
+# -X: sort by extension
+alias ls='ls --color=auto -X --group-directories-first'
 alias l='ls -F'
 alias la='l -A'
 alias ll='l -l'
@@ -107,7 +102,7 @@ alias grepc='grep --color=always'
 alias fgrepc='fgrep --color=always'
 alias egrepc='egrep --color=always'
 
-# enable colors in less 
+# enable colors in less
 alias less='less -R'
 alias more='less'
 alias m='less'
@@ -124,18 +119,18 @@ alias n='yes "" | head -n"${LINES:=100}"'
 
 # Editors
 if nx_path_search nvim &>/dev/null; then
-	alias vi='nvim'
-	alias vim='nvim'
-	alias view='nvim -R'
-	alias vimdiff='nvim -d'
+  alias vi='nvim'
+  alias vim='nvim'
+  alias view='nvim -R'
+  alias vimdiff='nvim -d'
 else
-	alias vi='vim'
-	alias view='vim -R'
+  alias vi='vim'
+  alias view='vim -R'
 fi
 alias emacs='emacs -nw'
 alias dict='nx_dict'
 
-# sudo preserves environment, rsudo gives the original sudo if you find this undesirable. 
+# sudo preserves environment, rsudo gives the original sudo if you find this undesirable.
 alias sudo='sudo -E'
 alias rsudo='nx_nonaliased sudo'
 
@@ -150,26 +145,26 @@ alias memfree='echo "$(($(memtotal)-$(memuse)))"'
 # results in making 'top()' so we fix that by dealiasing before creating functions.
 nx_dealias mem
 mem() {
-  local used="$(memuse)"
-  local total="$(memtotal)"
-  local free="$(($total-$used))"
+  local used total free
+  used="$(memuse)"
+  total="$(memtotal)"
+  free="$((total - used))"
   echo -e "Total:\t$total kB\nUsed:\t$used kB\nFree:\t$free kB"
 }
 
 if nx_path_search eix &>/dev/null; then
-	# Gentoo eix portage tool; default command auto colors
-	alias eixc='eix --force-color'
+  # Gentoo eix portage tool; default command auto colors
+  alias eixc='eix --force-color'
 fi
 
 # Set the number of cores to use in make and scons
-alias make="make -j $NX_BUILD_CORES"
+alias make="make -j \"\${NX_BUILD_CORES}\""
 
 # Source local scripts
-for NX_TEMPVAR in "$NX_LIBRARY_PATH/local/bashrc.d"/*
-do
-	if [ -r "$NX_TEMPVAR" ]; then
-        source "$NX_TEMPVAR"
-    fi
+for NX_TEMPVAR in "$NX_LIBRARY_PATH/local/bashrc.d"/*; do
+  if [ -r "$NX_TEMPVAR" ]; then
+    source "$NX_TEMPVAR"
+  fi
 done
 
 # Less variable pollution

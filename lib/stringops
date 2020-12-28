@@ -1,17 +1,20 @@
 #!/bin/env bash
 
 nx_stringize_escape() {
-    echo "${@//$'\e'/\\e}"
+    echo "${*//$'\e'/\\e}"
 }
+
 # <dir> <desired max length>
 # 0 for max compression, -1 for home-replace only
+# NOTE: not sure the max length works
 nx_abbreviate_dir() {
-    local IFS=/ c=1 n d r p s
-    p=( ${1/#$HOME/\~} )
-    if [ "$2" != -1 ]; then
+    local IFS=/ c=1 n d r p s max
+    max=${2:-0}
+    read -r -a p <<< "${1/#$HOME/\~}"
+    if [[ "$max" -ne -1 ]]; then
         r=${p[*]}
         s=${#r}
-        while ((s>$2&&c<${#p[*]}-1))
+        while (( s > "$max" && c < "${#p[*]}" - 1 ))
         do
             d=${p[c]}
             n=1;[[ $d = .* ]]&&n=2
@@ -19,7 +22,7 @@ nx_abbreviate_dir() {
             p[c++]=${d:0:n}
         done
     fi
-    if [ "${#p[@]}" == 1 ] && [ -z "${p[0]}" ]; then
+    if [[ "${#p[@]}" == 1 && -z "${p[0]}" ]]; then
         echo '/'
     else
         echo "${p[*]}"

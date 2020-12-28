@@ -1,21 +1,23 @@
 #!/bin/env bash
 
 nx_dict() {
-    local mode=0
-    local count=0
-    while read line; do
-        if [ $mode -eq 0 ] && [ "${line:0:4}" == '151 ' ]; then
+    local mode=0 count=0
+    while read -r line; do
+        if [[ "${mode}" -eq 0 && "${line:0:4}" == '151 ' ]]; then
             mode=1
-            [ $count -ne 0 ] && echo
+            if [[ "${count}" -ne 0 ]]; then
+              echo
+            fi
             ((count++))
             echo "${count}. ${line:4}"
-        elif [ $mode -eq 1 ]; then
-            if [ "$line" == $'.\r' ]; then
+        elif [[ "${mode}" -eq 1 ]]; then
+            if [[ "${line}" == $'.\r' ]]; then
                 mode=0
             else
                 echo "   ${line}"
             fi
         fi
-    done < <(curl dict://dict.org/d:"$@" 2>/dev/null)
-    [ $count -ne 0 ]
+    done < <(curl dict://dict.org/d:"$*" 2>/dev/null)
+    # fix the exit status
+    [[ "${count}" -ne 0 ]]
 }

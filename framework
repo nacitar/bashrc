@@ -8,7 +8,7 @@ nx_dealias() {
     done
 }
 nx_error() {
-    echo "[ERROR] $@" >&2
+    echo "[ERROR] $*" >&2
 }
 # exit code indicates success, output is the command name 
 nx_path_search() {
@@ -20,19 +20,20 @@ nx_path_search() {
 }
 # same as path_search, but with a custom PATH 
 nx_path_search_custom() {
-    if [ $# -ne 2 ]; then
+    if [[ $# -ne 2 ]]; then
         nx_error 'usage: nx_path_search_custom <filename_path_string> <search_path>'
         return 1
     fi
     local filename="$1"
     shift
-    PATH="$@" nx_path_search "$filename"
+    PATH="${1}" nx_path_search "$filename"
 }
 # runs the actual binary even if an alias is masking it
 nx_nonaliased() {
-    local cmd="$1"
+    local cmd realapp
+    cmd="$1"
     shift
-    local realapp="$(nx_path_search "$cmd")"
+    realapp="$(nx_path_search "$cmd")"
     if ! [ -x "$realapp" ]; then
         realapp="$cmd"  # just use what was provided
     fi
@@ -43,11 +44,15 @@ nx_library() {
     local varname
     for f in "$@"; do
         varname="NX_LIB_SOURCED_${f}"
-        if ! [ type -p "$varname" &>/dev/null ]; then
+        if ! type -p "$varname" &>/dev/null; then
             # create the function used to determine if a library has been loaded
             eval "${varname}() { return 0; }" &>/dev/null
             local filename="$NX_LIBRARY_PATH/lib/$f"
-            [ -r "$filename" ] && source "$filename" || nx_error "library file \"$f\" could not be sourced." 
+            if [[ -r "$filename" ]]; then
+              source "$filename"
+            else
+              nx_error "library file \"$f\" could not be sourced." 
+            fi
         fi
     done
 }
