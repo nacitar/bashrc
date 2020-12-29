@@ -22,7 +22,7 @@ source "${NX_LIBRARY_PATH}/framework"
 ############
 # LIBARIES #
 ############
-nx_library prompt colordiff dict stringops
+nx_library 'prompt' 'colordiff' 'dict' 'stringops'
 
 ###############
 # ENVIRONMENT #
