@@ -10,7 +10,7 @@ nx_diff_wrapper() {
   fi
   for app in ${applist}; do
     local diffapp
-    diffapp="$(nx_path_search "${app}")";
+    diffapp="$(nx_path_search "${app}")"
     if [[ -x "${diffapp}" ]]; then
       "$diffapp" "$*"
       return $?
@@ -18,4 +18,4 @@ nx_diff_wrapper() {
   done
   echo 'ERROR: diff command not found!' >&2
   return 1
-}	
+}

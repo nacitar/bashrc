@@ -1,30 +1,45 @@
 #!/bin/env bash
 
 nx_stringize_escape() {
-    echo "${*//$'\e'/\\e}"
+  echo "${*//$'\e'/\\e}"
 }
 
-# <dir> <desired max length>
-# 0 for max compression, -1 for home-replace only
-# NOTE: not sure the max length works
+# <dir> <desired max length of string>
+# Abbreviates the passed directory by referring to $HOME via ~ and further
+# compressing directory components down to their first letter only starting
+# with the higher components of the path and continuing until the path fits
+# within the number of characters requested in the length argument.  This
+# leaves the more local portion of the path intact, providing local context
+# while allowing you to constrain the path to a certain number of characters.
+# The lowest directory component is never compressed.
+# Hidden .directories include the dot as well.
+# If a length of -1 is passed, only the home directory is replaced.
 nx_abbreviate_dir() {
-    local IFS=/ c=1 n d r p s max
-    max=${2:-0}
-    read -r -a p <<< "${1/#$HOME/\~}"
-    if [[ "$max" -ne -1 ]]; then
-        r=${p[*]}
-        s=${#r}
-        while (( s > "$max" && c < "${#p[*]}" - 1 ))
-        do
-            d=${p[c]}
-            n=1;[[ $d = .* ]]&&n=2
-            ((s-=${#d}-n))
-            p[c++]=${d:0:n}
-        done
-    fi
-    if [[ "${#p[@]}" == 1 && -z "${p[0]}" ]]; then
-        echo '/'
-    else
-        echo "${p[*]}"
-    fi
+  # changing the IFS for this function is required
+  local IFS=/
+  local max="${2:-0}"
+  local path_components
+  read -r -a path_components <<<"${1/#$HOME/\~}"
+  if [[ "$max" -ne -1 ]]; then
+    local initial_components_string="${path_components[*]}"
+    local string_length=${#initial_components_string}
+    local i=1
+    while ((string_length > max && i < ${#path_components[*]} - 1)); do
+      local component="${path_components[i]}"
+      echo "COMPONENT $component"
+      local abbreviated_length=1
+      if [[ "${component}" == .* ]]; then
+        abbreviated_length=2
+      fi
+      # replace the component with its abbreviated form
+      path_components[i++]=${component:0:abbreviated_length}
+      # reduce the length to adjust for the replacement 
+      ((string_length -= ${#component} - abbreviated_length))
+    done
+  fi
+  if [[ "${#path_components[*]}" == 1 && -z "${path_components[0]}" ]]; then
+    echo '/'
+  else
+    echo "${path_components[*]}"
+  fi
 }

@@ -9,14 +9,15 @@ fi
 for NX_TEMPVAR in '/etc/bash.bashrc' '/etc/bash/bashrc' '/etc/bashrc'; do
   if [[ -r "${NX_TEMPVAR}" ]]; then
     source "${NX_TEMPVAR}"
-    break  # only the first one found
+    # only source the the first one found
+    break
   fi
 done
 
 # Add directories to path
 while read -r NX_TEMPVAR; do
   # if it exists and isn't already in PATH
-  if [[ -d "${NX_TEMPVAR}" && ! "${PATH}" =~ (^|:)${NX_TEMPVAR}/?(:|$) ]]; then 
+  if [[ -d "${NX_TEMPVAR}" && ! "${PATH}" =~ (^|:)${NX_TEMPVAR}/?(:|$) ]]; then
     export PATH="${NX_TEMPVAR}:${PATH}"
   fi
   # in reverse order of priority; the last entry will come first
@@ -43,9 +44,8 @@ if [[ -z "${NX_CHROOT}" && -r '/etc/debian_chroot' ]]; then
   NX_CHROOT="$(<'/etc/debian_chroot')"
 fi
 
-# Source local environment scripts 
-for NX_TEMPVAR in "${NX_LIBRARY_PATH}/local/environment.d"/*
-do
+# Source local environment scripts
+for NX_TEMPVAR in "${NX_LIBRARY_PATH}/local/environment.d"/*; do
   if [[ -r "${NX_TEMPVAR}" ]]; then
     source "${NX_TEMPVAR}"
   fi
