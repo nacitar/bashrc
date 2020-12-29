@@ -22,7 +22,7 @@ source "${NX_LIBRARY_PATH}/framework"
 ############
 # LIBARIES #
 ############
-nx_library 'prompt' 'colordiff' 'dict' 'stringops'
+nx_library prompt colordiff dict stringops
 
 ###############
 # ENVIRONMENT #
@@ -34,11 +34,11 @@ if [[ "${TERM}" != *-256color ]] && nx_tput_terminfo_exists "${TERM}-256color"; 
   nx_tput_init
 fi
 # force ignoredups and ignorespace
-HISTCONTROL='ignoreboth'
+HISTCONTROL=ignoreboth
 # append to the history file, don't overwrite it
-shopt -s 'histappend'
+shopt -s histappend
 # after each command check the window size and keep LINES and COLUMNS up to date
-shopt -s 'checkwinsize'
+shopt -s checkwinsize
 # disable history expansion so we can use ! in strings and filenames
 set +H
 

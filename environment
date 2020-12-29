@@ -6,13 +6,17 @@ if [[ -r '/etc/profile' ]]; then
   source '/etc/profile'
 fi
 
-for nx_tempvar in '/etc/bash.bashrc' '/etc/bash/bashrc' '/etc/bashrc'; do
+while read -r nx_tempvar; do
   if [[ -r "${nx_tempvar}" ]]; then
     source "${nx_tempvar}"
     # only source the the first one found
     break
   fi
-done
+done <<EOF
+/etc/bash.bashrc
+/etc/bash/bashrc
+/etc/bashrc
+EOF
 
 # Add directories to path
 while read -r nx_tempvar; do
@@ -40,8 +44,8 @@ export LD_LIBRARY_PATH="${HOME}/lib:${LD_LIBRARY_PATH}"
 
 # Determine if in a chroot
 NX_CHROOT="${debian_chroot:-}"
-if [[ -z "${NX_CHROOT}" && -r '/etc/debian_chroot' ]]; then
-  NX_CHROOT="$(<'/etc/debian_chroot')"
+if [[ -z "${NX_CHROOT}" && -r /etc/debian_chroot ]]; then
+  NX_CHROOT="$(</etc/debian_chroot)"
 fi
 
 # Source local environment scripts
