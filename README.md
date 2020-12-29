@@ -12,6 +12,6 @@ with symbolic links to the ones from this package.  An example installation
 into "$HOME/.bash":
 
 ```
-git clone git://github.com/nacitar/bashrc.git "$HOME/.bash"
+git clone https://github.com/nacitar/bashrc.git "$HOME/.bash"
 "$HOME/.bash/install.sh"
 ```
