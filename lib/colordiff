@@ -12,7 +12,7 @@ nx_diff_wrapper() {
     local diffapp
     diffapp="$(nx_path_search "${app}")"
     if [[ -x "${diffapp}" ]]; then
-      "$diffapp" "$*"
+      "${diffapp}" "$*"
       return $?
     fi
   done

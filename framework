@@ -1,98 +1,96 @@
 #!/bin/env bash
 
 nx_dealias() {
-    while (( "$#" )); do
-        unalias "$1" &>/dev/null
-        unset -f "$1" &>/dev/null
-        shift
-    done
+  while (("$#")); do
+    unalias "${1}" &>/dev/null
+    unset -f "${1}" &>/dev/null
+    shift
+  done
 }
 nx_error() {
-    echo "[ERROR] $*" >&2
+  echo "[ERROR] $*" >&2
 }
-# exit code indicates success, output is the command name 
+# exit code indicates success, output is the command name
 nx_path_search() {
-    if [ $# -ne 1 ]; then
-        nx_error 'usage: nx_path_search <filename_path_string>'
-        return 1
-    fi
-    type -P "$@" 2>/dev/null
+  if [[ $# -ne 1 ]]; then
+    nx_error 'usage: nx_path_search <filename_path_string>'
+    return 1
+  fi
+  type -P "$@" 2>/dev/null
 }
-# same as path_search, but with a custom PATH 
+# same as path_search, but with a custom PATH
 nx_path_search_custom() {
-    if [[ $# -ne 2 ]]; then
-        nx_error 'usage: nx_path_search_custom <filename_path_string> <search_path>'
-        return 1
-    fi
-    local filename="$1"
-    shift
-    PATH="${1}" nx_path_search "$filename"
+  if [[ $# -ne 2 ]]; then
+    nx_error 'usage: nx_path_search_custom <filename_path_string> <search_path>'
+    return 1
+  fi
+  local filename="${1}"
+  shift
+  PATH="${1}" nx_path_search "${filename}"
 }
 # runs the actual binary even if an alias is masking it
 nx_nonaliased() {
-    local cmd realapp
-    cmd="$1"
-    shift
-    realapp="$(nx_path_search "$cmd")"
-    if ! [ -x "$realapp" ]; then
-        realapp="$cmd"  # just use what was provided
-    fi
-    "$realapp" "$@"
+  local cmd realapp
+  cmd="${1}"
+  shift
+  realapp="$(nx_path_search "${cmd}")"
+  if [[ ! -x "${realapp}" ]]; then
+    realapp="${cmd}" # just use what was provided
+  fi
+  "${realapp}" "$@"
 }
 nx_library() {
-    local f
-    local varname
-    for f in "$@"; do
-        varname="NX_LIB_SOURCED_${f}"
-        if ! type -p "$varname" &>/dev/null; then
-            # create the function used to determine if a library has been loaded
-            eval "${varname}() { return 0; }" &>/dev/null
-            local filename="$NX_LIBRARY_PATH/lib/$f"
-            if [[ -r "$filename" ]]; then
-              source "$filename"
-            else
-              nx_error "library file \"$f\" could not be sourced." 
-            fi
-        fi
-    done
+  local f
+  local varname
+  for f in "$@"; do
+    varname="NX_LIB_SOURCED_${f}"
+    if ! type -p "${varname}" &>/dev/null; then
+      # create the function used to determine if a library has been loaded
+      eval "${varname}() { return 0; }" &>/dev/null
+      local filename="${NX_LIBRARY_PATH}/lib/${f}"
+      if [[ -r "${filename}" ]]; then
+        source "${filename}"
+      else
+        nx_error "library file \"${f}\" could not be sourced."
+      fi
+    fi
+  done
 }
 nx_enable_dircolors() {
-    local f
-    # enable color support of ls
-    if nx_path_search dircolors &>/dev/null; then
-        # use the first file found, otherwise the defaults
-        for f in "$HOME/.dircolors" /etc/DIR_COLORS /etc/dircolors ''
-        do
-            if [ -z "$f" ]; then
-                eval "$(nx_nonaliased dircolors -b)"  # defaults
-                break
-            elif [ -r "$f" ]; then
-                eval "$(nx_nonaliased dircolors -b "$f")"  # from a file
-                break
-            fi
-        done
-    fi
+  local f
+  # enable color support of ls
+  if nx_path_search dircolors &>/dev/null; then
+    # use the first file found, otherwise the defaults
+    for f in "${HOME}/.dircolors" /etc/DIR_COLORS /etc/dircolors ''; do
+      if [[ -z "${f}" ]]; then
+        eval "$(nx_nonaliased dircolors -b)" # defaults
+        break
+      elif [[ -r "${f}" ]]; then
+        eval "$(nx_nonaliased dircolors -b "${f}")" # from a file
+        break
+      fi
+    done
+  fi
 }
 nx_enable_bash_completion() {
-    local f
-    # source the first system bash completion script that we find
-    for f in /etc/profile.d/bash{-,_}completion{.sh,} /etc/bash_completion
-    do
-        if [ -r "$f" ]; then
-            source "$f"
-            break
-        fi
-    done
+  local f
+  # source the first system bash completion script that we find
+  for f in /etc/profile.d/bash{-,_}completion{.sh,} /etc/bash_completion; do
+    if [[ -r "${f}" ]]; then
+      source "${f}"
+      break
+    fi
+  done
 
-    # Allow tab completion after sudo
-    complete -cf sudo
+  # Allow tab completion after sudo
+  complete -cf sudo
 }
 nx_has_sed() {
-    nx_path_search sed &>/dev/null
+  nx_path_search sed &>/dev/null
 }
 nx_is_integral() {
-    if [ "$1" -eq "$1" ] &>/dev/null; then
-        return 0
-    fi
-    return 1
+  if [ "${1}" -eq "${1}" ] &>/dev/null; then
+    return 0
+  fi
+  return 1
 }

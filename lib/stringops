@@ -19,14 +19,13 @@ nx_abbreviate_dir() {
   local IFS=/
   local max="${2:-0}"
   local path_components
-  read -r -a path_components <<<"${1/#$HOME/\~}"
+  read -r -a path_components <<<"${1/#${HOME}/\~}"
   if [[ "$max" -ne -1 ]]; then
     local initial_components_string="${path_components[*]}"
     local string_length=${#initial_components_string}
     local i=1
     while ((string_length > max && i < ${#path_components[*]} - 1)); do
       local component="${path_components[i]}"
-      echo "COMPONENT $component"
       local abbreviated_length=1
       if [[ "${component}" == .* ]]; then
         abbreviated_length=2

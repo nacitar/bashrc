@@ -4,15 +4,21 @@ nx_tput_value() {
   # invokes tput if possible, if no output is obtained or tput doesn't exit
   # the default value is used.
   # usage: nx_tput_value [default] [command]
-  [ $# -lt 2 ] && return 1
-  local def_val="$1"
+  if [[ $# -lt 2 ]]; then
+    return 1
+  fi
+  local def_val="${1}"
   shift
   local ret=''
   if type -P tput &>/dev/null; then
     ret="$(tput "$@" 2>/dev/null)"
     code=$?
   fi
-  [ -n "$ret" ] && echo "$ret" || echo "$def_val"
+  if [[ -n "${ret}" ]]; then
+    echo "${ret}"
+  else
+    echo "${def_val}"
+  fi
   return $code
 }
 nx_tput_cmd() {
@@ -23,32 +29,36 @@ nx_tput_init() {
   nx_tput_cmd init
 }
 nx_tput_term_fg() {
-  [ $# -ne 1 ] || ! nx_is_integral "$1" || [ "$1" -lt 0 ] || [ "$1" -gt 256 ] && return 1
-
-  local def=''
-  if [ "$1" -lt 8 ]; then
-    def="\e[$((30 + $1 - 8))m"
-  elif [ "$1" -lt 16 ]; then
-    def="\e[$((90 + $1 - 16))m"
-  elif [ "$1" -lt 256 ]; then
-    def="\e[38;5;$1m"
+  if [[ $# -ne 1 ]] || ! nx_is_integral "${1}" || [[ "${1}" -lt 0 || "${1}" -gt 256 ]]; then
+    return 1
   fi
 
-  nx_tput_value "$def" setaf "$1"
+  local def=''
+  if [[ "${1}" -lt 8 ]]; then
+    def="\e[$((30 + ${1} - 8))m"
+  elif [[ "${1}" -lt 16 ]]; then
+    def="\e[$((90 + ${1} - 16))m"
+  elif [[ "${1}" -lt 256 ]]; then
+    def="\e[38;5;${1}m"
+  fi
+
+  nx_tput_value "${def}" setaf "${1}"
 }
 nx_tput_term_bg() {
-  [ $# -ne 1 ] || ! nx_is_integral "$1" || [ "$1" -lt 0 ] || [ "$1" -gt 256 ] && return 1
-
-  local def=''
-  if [ "$1" -lt 8 ]; then
-    def="\e[$((40 + $1))m"
-  elif [ "$1" -lt 16 ]; then
-    def="\e[$((100 + $1))m"
-  elif [ "$1" -lt 256 ]; then
-    def="\e[48;5;$1m"
+  if [[ $# -ne 1 ]] || ! nx_is_integral "${1}" || [[ "${1}" -lt 0 || "${1}" -gt 256 ]]; then
+    return 1
   fi
 
-  nx_tput_value "$def" setab "$1"
+  local def=''
+  if [[ "$1" -lt 8 ]]; then
+    def="\e[$((40 + ${1}))m"
+  elif [[ "${1}" -lt 16 ]]; then
+    def="\e[$((100 + ${1}))m"
+  elif [[ "${1}" -lt 256 ]]; then
+    def="\e[48;5;${1}m"
+  fi
+
+  nx_tput_value "${def}" setab "${1}"
 }
 nx_tput_term_bold() {
   nx_tput_value "\e[1m" bold
@@ -66,33 +76,37 @@ nx_tput_term_normal() {
   nx_tput_value "\e[m\0" sgr0
 }
 nx_tput_terminfo_exists() {
-  [ $# -ne 1 ] && return 1
-  nx_tput_cmd -T"$1" -S </dev/null
+  if [[ $# -ne 1 ]]; then
+    return 1
+  fi
+  nx_tput_cmd -T"${1}" -S </dev/null
 }
 nx_tput_colors() {
   local value ret
   value="$(nx_tput_value -1 colors)"
   ret=$?
-  if [ "$value" == -1 ]; then
+  if [[ "${value}" -eq -1 ]]; then
     # attempt to use term to find the colors
-    case "$TERM" in
+    case "${TERM}" in
       *color*)
         # get the number before 'color'
         value="${TERM%%color*}"
         value="${value##*[![:digit:]]}"
 
-        if [ -z "$value" ]; then
+        if [[ -z "${value}" ]]; then
           # it has color in the name, we just don't see that it has colors
           value=8
         fi
         ;;
     esac
   fi
-  echo "$value"
+  echo "${value}"
   # a value of -1 indicates no colors
-  [ "$value" == -1 ] && return 1
+  if [[ "${value}" -eq -1 ]]; then
+    return 1
+  fi
   # return the error value of the tput command
-  return $ret
+  return "${ret}"
 }
 nx_color_test() {
   local T='  gYw  ' # The test text
@@ -101,37 +115,54 @@ nx_color_test() {
   local term_normal
   # the tput functions are accurate, but not fast enough for making this table.  caching them.
   local i=0
-  while [ $i -lt 16 ]; do
-    term_fg[$i]="$(nx_tput_term_fg $i)"
-    term_bg[$i]="$(nx_tput_term_bg $i)"
+  while [[ "${i}" -lt 16 ]]; do
+    term_fg[i]="$(nx_tput_term_fg "${i}")"
+    term_bg[i]="$(nx_tput_term_bg "${i}")"
     ((i++))
   done
   term_normal="$(nx_tput_term_normal)"
   # headers
   echo -en '  '
   bg_color=-1
-  while [ "$bg_color" -lt 16 ]; do
-    [ "$bg_color" -lt 10 ] && bg_str=" $bg_color" || bg_str="$bg_color"
-    [ "$bg_color" == -1 ] && bg_str='bg'
-    echo -en "   $bg_str  "
+  while [[ "${bg_color}" -lt 16 ]]; do
+    if [[ "${bg_color}" -eq -1 ]]; then
+      bg_str='bg'
+    elif [[ "${bg_color}" -lt 10 ]]; then
+      bg_str=" ${bg_color}"
+    else
+      bg_str="${bg_color}"
+    fi
+    echo -en "   ${bg_str}  "
     ((bg_color++))
   done
-  echo
+  echo ''
   fg_color=-1
-  while [ "$fg_color" -lt 16 ]; do
-    [ "$fg_color" -lt 10 ] && fg_str=" $fg_color" || fg_str="$fg_color"
-    [ "$fg_color" -lt 0 ] && fg_str='fg' && fg_escape_str='' || fg_escape_str="${term_fg[$fg_color]}"
-    echo -en "$fg_str $fg_escape_str$T"
+  while [[ "${fg_color}" -lt 16 ]]; do
+    fg_escape_str="${term_fg[fg_color]}"
+    if [[ "${fg_color}" -lt 0 ]]; then
+      fg_str='fg'
+      fg_escape_str=''
+    elif [[ "${fg_color}" -lt 10 ]]; then
+      fg_str=" ${fg_color}"
+    else
+      fg_str="${fg_color}"
+    fi
+
+    echo -en "${fg_str} ${fg_escape_str}${T}"
     bg_color=0
-    while [ "$bg_color" -lt 16 ]; do
-      if [ "$bg_color" -lt 0 ]; then
+    while [[ "${bg_color}" -lt 16 ]]; do
+      if [[ "${bg_color}" -lt 0 ]]; then
         bg_str='  '
         bg_escape_str=''
       else
-        [ "$bg_color" -lt 10 ] && bg_str=" $bg_color" || bg_str="$bg_color"
-        bg_escape_str="${term_bg[$bg_color]}"
+        bg_escape_str="${term_bg[bg_color]}"
+        if [[ "${bg_color}" -lt 10 ]]; then
+          bg_str=" ${bg_color}"
+        else
+          bg_str="${bg_color}"
+        fi
       fi
-      echo -en "$fg_escape_str$bg_escape_str$T$term_normal"
+      echo -en "${fg_escape_str}${bg_escape_str}${T}${term_normal}"
       ((bg_color++))
     done
     echo

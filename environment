@@ -6,19 +6,19 @@ if [[ -r '/etc/profile' ]]; then
   source '/etc/profile'
 fi
 
-for NX_TEMPVAR in '/etc/bash.bashrc' '/etc/bash/bashrc' '/etc/bashrc'; do
-  if [[ -r "${NX_TEMPVAR}" ]]; then
-    source "${NX_TEMPVAR}"
+for nx_tempvar in '/etc/bash.bashrc' '/etc/bash/bashrc' '/etc/bashrc'; do
+  if [[ -r "${nx_tempvar}" ]]; then
+    source "${nx_tempvar}"
     # only source the the first one found
     break
   fi
 done
 
 # Add directories to path
-while read -r NX_TEMPVAR; do
+while read -r nx_tempvar; do
   # if it exists and isn't already in PATH
-  if [[ -d "${NX_TEMPVAR}" && ! "${PATH}" =~ (^|:)${NX_TEMPVAR}/?(:|$) ]]; then
-    export PATH="${NX_TEMPVAR}:${PATH}"
+  if [[ -d "${nx_tempvar}" && ! "${PATH}" =~ (^|:)${nx_tempvar}/?(:|$) ]]; then
+    export PATH="${nx_tempvar}:${PATH}"
   fi
   # in reverse order of priority; the last entry will come first
 done <<EOF
@@ -45,11 +45,11 @@ if [[ -z "${NX_CHROOT}" && -r '/etc/debian_chroot' ]]; then
 fi
 
 # Source local environment scripts
-for NX_TEMPVAR in "${NX_LIBRARY_PATH}/local/environment.d"/*; do
-  if [[ -r "${NX_TEMPVAR}" ]]; then
-    source "${NX_TEMPVAR}"
+for nx_tempvar in "${NX_LIBRARY_PATH}/local/environment.d"/*; do
+  if [[ -r "${nx_tempvar}" ]]; then
+    source "${nx_tempvar}"
   fi
 done
 
 # Less variable pollution
-unset NX_TEMPVAR
+unset nx_tempvar

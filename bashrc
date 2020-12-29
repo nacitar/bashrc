@@ -5,8 +5,8 @@
 # IF YOU SEE THIS, YOU SHOULDN'T BE CHANGING IT!!!!
 #
 # Put your local configurations within:
-#   $NX_LIBRARY_PATH/local/bashrc.d
-#   $NX_LIBRARY_PATH/local/environment.d
+#   ${NX_LIBRARY_PATH}/local/bashrc.d
+#   ${NX_LIBRARY_PATH}/local/environment.d
 #
 ###########################################################
 
@@ -17,7 +17,7 @@ if [[ $- != *i* ]]; then
   return
 fi
 
-source "$NX_LIBRARY_PATH/framework"
+source "${NX_LIBRARY_PATH}/framework"
 
 ############
 # LIBARIES #
@@ -29,16 +29,16 @@ nx_library prompt colordiff dict stringops
 ###############
 
 # xterm/screen/etc.. get promoted to 256color variants if available
-if [[ "$TERM" != *-256color ]] && nx_tput_terminfo_exists "$TERM-256color"; then
-  export TERM="$TERM-256color"
+if [[ "${TERM}" != *-256color ]] && nx_tput_terminfo_exists "${TERM}-256color"; then
+  export TERM="${TERM}-256color"
   nx_tput_init
 fi
 # force ignoredups and ignorespace
-HISTCONTROL=ignoreboth
+HISTCONTROL='ignoreboth'
 # append to the history file, don't overwrite it
-shopt -s histappend
+shopt -s 'histappend'
 # after each command check the window size and keep LINES and COLUMNS up to date
-shopt -s checkwinsize
+shopt -s 'checkwinsize'
 # disable history expansion so we can use ! in strings and filenames
 set +H
 
@@ -136,7 +136,7 @@ alias rsudo='nx_nonaliased sudo'
 
 # Memory
 # Output: kb pid args
-alias memtop='ps -e -orss=,pid=,args= | sort -b -k1,1n | pr -TW$COLUMNS'
+alias memtop='ps -e -orss=,pid=,args= | sort -b -k1,1n | pr -TW${COLUMNS}'
 alias memuse='echo "$(($(ps -e -orss= | paste -sd+)))"'
 alias memtotal="cat /proc/meminfo | sed -n 's/^MemTotal:[[:space:]]*\([[:digit:]]*\).*$/\1/p'"
 alias memfree='echo "$(($(memtotal)-$(memuse)))"'
@@ -149,7 +149,7 @@ mem() {
   used="$(memuse)"
   total="$(memtotal)"
   free="$((total - used))"
-  echo -e "Total:\t$total kB\nUsed:\t$used kB\nFree:\t$free kB"
+  echo -e "Total:\t${total} kB\nUsed:\t${used} kB\nFree:\t${free} kB"
 }
 
 if nx_path_search eix &>/dev/null; then
@@ -161,11 +161,11 @@ fi
 alias make="make -j \"\${NX_BUILD_CORES}\""
 
 # Source local scripts
-for NX_TEMPVAR in "$NX_LIBRARY_PATH/local/bashrc.d"/*; do
-  if [ -r "$NX_TEMPVAR" ]; then
-    source "$NX_TEMPVAR"
+for nx_tempvar in "${NX_LIBRARY_PATH}/local/bashrc.d"/*; do
+  if [ -r "${nx_tempvar}" ]; then
+    source "${nx_tempvar}"
   fi
 done
 
 # Less variable pollution
-unset NX_TEMPVAR
+unset nx_tempvar
