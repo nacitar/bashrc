@@ -22,7 +22,7 @@ source "${NX_LIBRARY_PATH}/framework"
 ############
 # LIBARIES #
 ############
-nx_library prompt colordiff dict stringops
+nx_library keychain prompt colordiff dict stringops
 
 ###############
 # ENVIRONMENT #
@@ -68,6 +68,10 @@ nx_set_bash_prompt
 nx_set_titles_with_prompt
 nx_enable_dircolors
 nx_enable_bash_completion
+
+# Will reuse any existing ssh-agent, but if a new one is needed and your
+# private key is password protected, you will be prompted.
+nx_unlock_keychain
 
 ###########
 # ALIASES #

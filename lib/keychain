@@ -1,0 +1,9 @@
+#!/bin/env bash
+
+nx_unlock_keychain() {
+  if [[ -f "${HOME}/.ssh/id_rsa" ]]; then
+    if nx_path_search keychain &>/dev/null; then
+      eval "$(keychain --nogui --eval --agents ssh id_rsa)"
+    fi
+  fi
+}
