@@ -2,8 +2,12 @@
 
 nx_unlock_keychain() {
   if [[ -f "${HOME}/.ssh/id_rsa" ]]; then
-    if nx_path_search keychain &>/dev/null; then
-      eval "$(keychain --nogui --eval --agents ssh id_rsa)"
+    if [[ -z "${SSH_AUTH_SOCK}" ]] || ! nx_is_integral "${SSH_AGENT_PID}"; then
+      # Looks like it isn't setup, so this is probably a new shell.
+      # Without this check, interactive subshells needlessly run it again.
+      if nx_path_search keychain &>/dev/null; then
+        eval "$(keychain --nogui --eval --agents ssh id_rsa)"
+      fi
     fi
   fi
 }
