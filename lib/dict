@@ -1,4 +1,4 @@
-#!/bin/env bash
+#!/bin/bash
 
 ns_dict() {
   local mode=0 count=0

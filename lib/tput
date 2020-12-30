@@ -1,4 +1,4 @@
-#!/bin/env bash
+#!/bin/bash
 
 ns_tput_value() {
   # invokes tput if possible, if no output is obtained or tput doesn't exit
