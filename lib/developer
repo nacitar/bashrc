@@ -1,0 +1,18 @@
+#!/bin/bash
+
+ns_shellcheck() {
+  if ns_path_search 'shellcheck' &>/dev/null; then
+    shellcheck --shell=bash --exclude=SC1090,SC1091 "$@"
+  else
+    ns_error 'shellcheck not found in path.'
+    return 1
+  fi
+}
+ns_shfmt() {
+  if ns_path_search 'shfmt' &>/dev/null; then
+    shfmt -i 2 -ci "$@"
+  else
+    ns_error 'shfmt not found in path.'
+    return 1
+  fi
+}

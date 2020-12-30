@@ -1,6 +1,6 @@
 #!/bin/env bash
 
-nx_stringize_escape() {
+ns_stringize_escape() {
   echo "${*//$'\e'/\\e}"
 }
 
@@ -14,7 +14,7 @@ nx_stringize_escape() {
 # The lowest directory component is never compressed.
 # Hidden .directories include the dot as well.
 # If a length of -1 is passed, only the home directory is replaced.
-nx_abbreviate_dir() {
+ns_abbreviate_dir() {
   # changing the IFS for this function is required
   local IFS=/
   local max="${2:-0}"

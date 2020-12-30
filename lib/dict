@@ -1,6 +1,6 @@
 #!/bin/env bash
 
-nx_dict() {
+ns_dict() {
   local mode=0 count=0
   while read -r line; do
     if [[ "${mode}" -eq 0 && "${line:0:4}" == '151 ' ]]; then

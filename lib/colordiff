@@ -1,6 +1,6 @@
 #!/bin/env bash
 
-nx_diff_wrapper() {
+ns_diff_wrapper() {
   # wrap diff to use colordiff if it's available
   local applist
   if [[ "${CDIFF_FORCE_COLOR}" -eq 1 || -t 1 ]]; then
@@ -10,12 +10,12 @@ nx_diff_wrapper() {
   fi
   for app in ${applist}; do
     local diffapp
-    diffapp="$(nx_path_search "${app}")"
+    diffapp="$(ns_path_search "${app}")"
     if [[ -x "${diffapp}" ]]; then
-      "${diffapp}" "$*"
+      "${diffapp}" "$@"
       return $?
     fi
   done
-  echo 'ERROR: diff command not found!' >&2
+  ns_error 'diff command not found'
   return 1
 }

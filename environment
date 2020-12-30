@@ -1,14 +1,14 @@
 #!/bin/bash
 
-NX_LIBRARY_PATH="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
+NS_LIBRARY_PATH="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
 
 if [[ -r '/etc/profile' ]]; then
   source '/etc/profile'
 fi
 
-while read -r nx_tempvar; do
-  if [[ -r "${nx_tempvar}" ]]; then
-    source "${nx_tempvar}"
+while read -r ns_tempvar; do
+  if [[ -r "${ns_tempvar}" ]]; then
+    source "${ns_tempvar}"
     # only source the the first one found
     break
   fi
@@ -19,10 +19,10 @@ done <<EOF
 EOF
 
 # Add directories to path
-while read -r nx_tempvar; do
+while read -r ns_tempvar; do
   # if it exists and isn't already in PATH
-  if [[ -d "${nx_tempvar}" && ! "${PATH}" =~ (^|:)${nx_tempvar}/?(:|$) ]]; then
-    export PATH="${nx_tempvar}:${PATH}"
+  if [[ -d "${ns_tempvar}" && ! "${PATH}" =~ (^|:)${ns_tempvar}/?(:|$) ]]; then
+    export PATH="${ns_tempvar}:${PATH}"
   fi
   # in reverse order of priority; the last entry will come first
 done <<EOF
@@ -43,17 +43,17 @@ export PATH="${HOME}/bin:${PATH}"
 export LD_LIBRARY_PATH="${HOME}/lib:${LD_LIBRARY_PATH}"
 
 # Determine if in a chroot
-NX_CHROOT="${debian_chroot:-}"
-if [[ -z "${NX_CHROOT}" && -r /etc/debian_chroot ]]; then
-  NX_CHROOT="$(</etc/debian_chroot)"
+NS_CHROOT="${debian_chroot:-}"
+if [[ -z "${NS_CHROOT}" && -r /etc/debian_chroot ]]; then
+  NS_CHROOT="$(</etc/debian_chroot)"
 fi
 
 # Source local environment scripts
-for nx_tempvar in "${NX_LIBRARY_PATH}/local/environment.d"/*; do
-  if [[ -r "${nx_tempvar}" ]]; then
-    source "${nx_tempvar}"
+for ns_tempvar in "${NS_LIBRARY_PATH}/local/environment.d"/*; do
+  if [[ -r "${ns_tempvar}" ]]; then
+    source "${ns_tempvar}"
   fi
 done
 
 # Less variable pollution
-unset nx_tempvar
+unset ns_tempvar

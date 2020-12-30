@@ -1,78 +1,78 @@
 #!/bin/env bash
 
-nx_dealias() {
+ns_dealias() {
   while (("$#")); do
     unalias "${1}" &>/dev/null
     unset -f "${1}" &>/dev/null
     shift
   done
 }
-nx_error() {
+ns_error() {
   echo "[ERROR] $*" >&2
 }
 # exit code indicates success, output is the command name
-nx_path_search() {
+ns_path_search() {
   if [[ $# -ne 1 ]]; then
-    nx_error 'usage: nx_path_search <filename_path_string>'
+    ns_error 'usage: ns_path_search <filename_path_string>'
     return 1
   fi
   type -P "$@" 2>/dev/null
 }
 # same as path_search, but with a custom PATH
-nx_path_search_custom() {
+ns_path_search_custom() {
   if [[ $# -ne 2 ]]; then
-    nx_error 'usage: nx_path_search_custom <filename_path_string> <search_path>'
+    ns_error 'usage: ns_path_search_custom <filename_path_string> <search_path>'
     return 1
   fi
   local filename="${1}"
   shift
-  PATH="${1}" nx_path_search "${filename}"
+  PATH="${1}" ns_path_search "${filename}"
 }
 # runs the actual binary even if an alias is masking it
-nx_nonaliased() {
+ns_nonaliased() {
   local cmd realapp
   cmd="${1}"
   shift
-  realapp="$(nx_path_search "${cmd}")"
+  realapp="$(ns_path_search "${cmd}")"
   if [[ ! -x "${realapp}" ]]; then
     realapp="${cmd}" # just use what was provided
   fi
   "${realapp}" "$@"
 }
-nx_library() {
+ns_library() {
   local f
   local varname
   for f in "$@"; do
-    varname="NX_LIB_SOURCED_${f}"
+    varname="NS_LIB_SOURCED_${f}"
     if ! type -p "${varname}" &>/dev/null; then
       # create the function used to determine if a library has been loaded
       eval "${varname}() { return 0; }" &>/dev/null
-      local filename="${NX_LIBRARY_PATH}/lib/${f}"
+      local filename="${NS_LIBRARY_PATH}/lib/${f}"
       if [[ -r "${filename}" ]]; then
         source "${filename}"
       else
-        nx_error "library file \"${f}\" could not be sourced."
+        ns_error "library file \"${f}\" could not be sourced."
       fi
     fi
   done
 }
-nx_enable_dircolors() {
+ns_enable_dircolors() {
   local f
   # enable color support of ls
-  if nx_path_search dircolors &>/dev/null; then
+  if ns_path_search dircolors &>/dev/null; then
     # use the first file found, otherwise the defaults
     for f in "${HOME}/.dircolors" /etc/DIR_COLORS /etc/dircolors ''; do
       if [[ -z "${f}" ]]; then
-        eval "$(nx_nonaliased dircolors -b)" # defaults
+        eval "$(ns_nonaliased dircolors -b)" # defaults
         break
       elif [[ -r "${f}" ]]; then
-        eval "$(nx_nonaliased dircolors -b "${f}")" # from a file
+        eval "$(ns_nonaliased dircolors -b "${f}")" # from a file
         break
       fi
     done
   fi
 }
-nx_enable_bash_completion() {
+ns_enable_bash_completion() {
   local f
   # source the first system bash completion script that we find
   for f in /etc/profile.d/bash{-,_}completion{.sh,} /etc/bash_completion; do
@@ -85,10 +85,10 @@ nx_enable_bash_completion() {
   # Allow tab completion after sudo
   complete -cf sudo
 }
-nx_has_sed() {
-  nx_path_search sed &>/dev/null
+ns_has_sed() {
+  ns_path_search sed &>/dev/null
 }
-nx_is_integral() {
+ns_is_integral() {
   if [ "${1}" -eq "${1}" ] &>/dev/null; then
     return 0
   fi

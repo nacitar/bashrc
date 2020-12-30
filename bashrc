@@ -5,8 +5,8 @@
 # IF YOU SEE THIS, YOU SHOULDN'T BE CHANGING IT!!!!
 #
 # Put your local configurations within:
-#   ${NX_LIBRARY_PATH}/local/bashrc.d
-#   ${NX_LIBRARY_PATH}/local/environment.d
+#   ${NS_LIBRARY_PATH}/local/bashrc.d
+#   ${NS_LIBRARY_PATH}/local/environment.d
 #
 ###########################################################
 
@@ -17,21 +17,21 @@ if [[ $- != *i* ]]; then
   return
 fi
 
-source "${NX_LIBRARY_PATH}/framework"
+source "${NS_LIBRARY_PATH}/framework"
 
 ############
 # LIBARIES #
 ############
-nx_library keychain prompt colordiff dict stringops
+ns_library keychain prompt colordiff dict stringops developer
 
 ###############
 # ENVIRONMENT #
 ###############
 
 # xterm/screen/etc.. get promoted to 256color variants if available
-if [[ "${TERM}" != *-256color ]] && nx_tput_terminfo_exists "${TERM}-256color"; then
+if [[ "${TERM}" != *-256color ]] && ns_tput_terminfo_exists "${TERM}-256color"; then
   export TERM="${TERM}-256color"
-  nx_tput_init
+  ns_tput_init
 fi
 # force ignoredups and ignorespace
 HISTCONTROL=ignoreboth
@@ -43,7 +43,7 @@ shopt -s checkwinsize
 set +H
 
 # set the editors
-if nx_path_search nvim &>/dev/null; then
+if ns_path_search nvim &>/dev/null; then
   export SVN_EDITOR='nvim'
   export EDITOR='nvim'
   export VISUAL='nvim'
@@ -54,9 +54,9 @@ else
 fi
 export PAGER='less -R'
 
-NX_CPU_CORES=$(grep "^processor" /proc/cpuinfo --count 2>/dev/null)
+NS_CPU_CORES=$(grep "^processor" /proc/cpuinfo --count 2>/dev/null)
 # one extra is usually advised for parallellizing builds
-NX_BUILD_CORES=$((${NX_CPU_CORES:-2} + 1))
+NS_BUILD_CORES=$((${NS_CPU_CORES:-2} + 1))
 
 # Disable terminal blanking
 setterm -blank 0 &>/dev/null
@@ -64,14 +64,14 @@ setterm -powersave off &>/dev/null
 setterm -powerdown 0 &>/dev/null
 
 # Set prompt and titles
-nx_set_bash_prompt
-nx_set_titles_with_prompt
-nx_enable_dircolors
-nx_enable_bash_completion
+ns_set_bash_prompt
+ns_set_titles_with_prompt
+ns_enable_dircolors
+ns_enable_bash_completion
 
 # Will reuse any existing ssh-agent, but if a new one is needed and your
 # private key is password protected, you will be prompted.
-nx_unlock_keychain
+ns_unlock_keychain
 
 ###########
 # ALIASES #
@@ -96,11 +96,11 @@ alias lald='ls -bAld */ .*/'
 alias bare='sed "s/\x1B\[\([0-9]\{1,3\}\(\(;[0-9]\{1,3\}\)*\)\?\)\?[m|K]//g"'
 alias b='bare'
 
-alias diff='nx_diff_wrapper'
-alias diffc='CDIFF_FORCE_COLOR=1 nx_diff_wrapper'
+alias diff='ns_diff_wrapper'
+alias diffc='CDIFF_FORCE_COLOR=1 ns_diff_wrapper'
 
 # remove any system aliases for grep
-nx_dealias grep fgrep egrep
+ns_dealias grep fgrep egrep
 # grep with color forced
 alias grepc='grep --color=always'
 alias fgrepc='fgrep --color=always'
@@ -122,7 +122,7 @@ alias c='clear'
 alias n='yes "" | head -n"${LINES:=100}"'
 
 # Editors
-if nx_path_search nvim &>/dev/null; then
+if ns_path_search nvim &>/dev/null; then
   alias vi='nvim'
   alias vim='nvim'
   alias view='nvim -R'
@@ -132,11 +132,11 @@ else
   alias view='vim -R'
 fi
 alias emacs='emacs -nw'
-alias dict='nx_dict'
+alias dict='ns_dict'
 
 # sudo preserves environment, rsudo gives the original sudo if you find this undesirable.
 alias sudo='sudo -E'
-alias rsudo='nx_nonaliased sudo'
+alias rsudo='ns_nonaliased sudo'
 
 # Memory
 # Output: kb pid args
@@ -147,7 +147,7 @@ alias memfree='echo "$(($(memtotal)-$(memuse)))"'
 
 # if a system has something like "alias mem='top', making a function like 'mem()' actually
 # results in making 'top()' so we fix that by dealiasing before creating functions.
-nx_dealias mem
+ns_dealias mem
 mem() {
   local used total free
   used="$(memuse)"
@@ -156,20 +156,20 @@ mem() {
   echo -e "Total:\t${total} kB\nUsed:\t${used} kB\nFree:\t${free} kB"
 }
 
-if nx_path_search eix &>/dev/null; then
+if ns_path_search eix &>/dev/null; then
   # Gentoo eix portage tool; default command auto colors
   alias eixc='eix --force-color'
 fi
 
 # Set the number of cores to use in make and scons
-alias make="make -j \"\${NX_BUILD_CORES}\""
+alias make="make -j \"\${NS_BUILD_CORES}\""
 
 # Source local scripts
-for nx_tempvar in "${NX_LIBRARY_PATH}/local/bashrc.d"/*; do
-  if [ -r "${nx_tempvar}" ]; then
-    source "${nx_tempvar}"
+for ns_tempvar in "${NS_LIBRARY_PATH}/local/bashrc.d"/*; do
+  if [ -r "${ns_tempvar}" ]; then
+    source "${ns_tempvar}"
   fi
 done
 
 # Less variable pollution
-unset nx_tempvar
+unset ns_tempvar

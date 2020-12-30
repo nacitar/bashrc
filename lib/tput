@@ -1,9 +1,9 @@
 #!/bin/env bash
 
-nx_tput_value() {
+ns_tput_value() {
   # invokes tput if possible, if no output is obtained or tput doesn't exit
   # the default value is used.
-  # usage: nx_tput_value [default] [command]
+  # usage: ns_tput_value [default] [command]
   if [[ $# -lt 2 ]]; then
     return 1
   fi
@@ -21,15 +21,15 @@ nx_tput_value() {
   fi
   return $code
 }
-nx_tput_cmd() {
+ns_tput_cmd() {
   # this one doesn't take a default value
-  nx_tput_value '' "$@" &>/dev/null
+  ns_tput_value '' "$@" &>/dev/null
 }
-nx_tput_init() {
-  nx_tput_cmd init
+ns_tput_init() {
+  ns_tput_cmd init
 }
-nx_tput_term_fg() {
-  if [[ $# -ne 1 ]] || ! nx_is_integral "${1}" || [[ "${1}" -lt 0 || "${1}" -gt 256 ]]; then
+ns_tput_term_fg() {
+  if [[ $# -ne 1 ]] || ! ns_is_integral "${1}" || [[ "${1}" -lt 0 || "${1}" -gt 256 ]]; then
     return 1
   fi
 
@@ -42,10 +42,10 @@ nx_tput_term_fg() {
     def="\e[38;5;${1}m"
   fi
 
-  nx_tput_value "${def}" setaf "${1}"
+  ns_tput_value "${def}" setaf "${1}"
 }
-nx_tput_term_bg() {
-  if [[ $# -ne 1 ]] || ! nx_is_integral "${1}" || [[ "${1}" -lt 0 || "${1}" -gt 256 ]]; then
+ns_tput_term_bg() {
+  if [[ $# -ne 1 ]] || ! ns_is_integral "${1}" || [[ "${1}" -lt 0 || "${1}" -gt 256 ]]; then
     return 1
   fi
 
@@ -58,32 +58,32 @@ nx_tput_term_bg() {
     def="\e[48;5;${1}m"
   fi
 
-  nx_tput_value "${def}" setab "${1}"
+  ns_tput_value "${def}" setab "${1}"
 }
-nx_tput_term_bold() {
-  nx_tput_value "\e[1m" bold
+ns_tput_term_bold() {
+  ns_tput_value "\e[1m" bold
 }
-nx_tput_term_underline() {
-  nx_tput_value "\e[4m" smul
+ns_tput_term_underline() {
+  ns_tput_value "\e[4m" smul
 }
-nx_tput_term_reverse() {
-  nx_tput_value "\e[7m" rev
+ns_tput_term_reverse() {
+  ns_tput_value "\e[7m" rev
 }
-nx_tput_term_italic() {
-  nx_tput_value "\e[3m" sitm
+ns_tput_term_italic() {
+  ns_tput_value "\e[3m" sitm
 }
-nx_tput_term_normal() {
-  nx_tput_value "\e[m\0" sgr0
+ns_tput_term_normal() {
+  ns_tput_value "\e[m\0" sgr0
 }
-nx_tput_terminfo_exists() {
+ns_tput_terminfo_exists() {
   if [[ $# -ne 1 ]]; then
     return 1
   fi
-  nx_tput_cmd -T"${1}" -S </dev/null
+  ns_tput_cmd -T"${1}" -S </dev/null
 }
-nx_tput_colors() {
+ns_tput_colors() {
   local value ret
-  value="$(nx_tput_value -1 colors)"
+  value="$(ns_tput_value -1 colors)"
   ret=$?
   if [[ "${value}" -eq -1 ]]; then
     # attempt to use term to find the colors
@@ -108,7 +108,7 @@ nx_tput_colors() {
   # return the error value of the tput command
   return "${ret}"
 }
-nx_color_test() {
+ns_color_test() {
   local T='  gYw  ' # The test text
   local term_fg fg_color fg_str fg_escape_str
   local term_bg bg_color bg_str bg_escape_str
@@ -116,11 +116,11 @@ nx_color_test() {
   # the tput functions are accurate, but not fast enough for making this table.  caching them.
   local i=0
   while [[ "${i}" -lt 16 ]]; do
-    term_fg[i]="$(nx_tput_term_fg "${i}")"
-    term_bg[i]="$(nx_tput_term_bg "${i}")"
+    term_fg[i]="$(ns_tput_term_fg "${i}")"
+    term_bg[i]="$(ns_tput_term_bg "${i}")"
     ((i++))
   done
-  term_normal="$(nx_tput_term_normal)"
+  term_normal="$(ns_tput_term_normal)"
   # headers
   echo -en '  '
   bg_color=-1
