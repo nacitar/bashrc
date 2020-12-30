@@ -6,7 +6,7 @@ nx_unlock_keychain() {
       # Looks like it isn't setup, so this is probably a new shell.
       # Without this check, interactive subshells needlessly run it again.
       if nx_path_search keychain &>/dev/null; then
-        eval "$(keychain --nogui --eval --agents ssh id_rsa)"
+        eval "$(keychain -q --nogui --eval --agents ssh id_rsa)"
       fi
     fi
   fi
