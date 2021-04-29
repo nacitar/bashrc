@@ -134,10 +134,6 @@ fi
 alias emacs='emacs -nw'
 alias dict='ns_dict'
 
-# sudo preserves environment, rsudo gives the original sudo if you find this undesirable.
-alias sudo='sudo -E'
-alias rsudo='ns_nonaliased sudo'
-
 # Memory
 # Output: kb pid args
 alias memtop='ps -e -orss=,pid=,args= | sort -b -k1,1n | pr -TW${COLUMNS}'
