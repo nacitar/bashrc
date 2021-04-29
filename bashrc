@@ -47,10 +47,12 @@ if ns_path_search nvim &>/dev/null; then
   export SVN_EDITOR='nvim'
   export EDITOR='nvim'
   export VISUAL='nvim'
+  export DIFFPROG='nvim -d'
 else
   export SVN_EDITOR='vim'
   export EDITOR='vim'
   export VISUAL='vim'
+  export DIFFPROG='vim -d'
 fi
 export PAGER='less -R'
 
