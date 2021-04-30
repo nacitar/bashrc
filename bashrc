@@ -125,10 +125,8 @@ alias n='yes "" | head -n"${LINES:=100}"'
 
 # Editors
 if ns_path_search nvim &>/dev/null; then
-  alias vi='nvim'
-  alias vim='nvim'
   alias view='nvim -R'
-  alias vimdiff='nvim -d'
+  alias nvimdiff='nvim -d'
 else
   alias vi='vim'
   alias view='vim -R'
