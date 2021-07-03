@@ -5,4 +5,3 @@ set -e
 
 ln -sf "$NS_LIBRARY_PATH/bashrc" "$HOME/.bashrc"
 ln -sf "$NS_LIBRARY_PATH/bash_profile" "$HOME/.bash_profile"
-ln -sf "$NS_LIBRARY_PATH/bash_logout" "$HOME/.bash_logout"
