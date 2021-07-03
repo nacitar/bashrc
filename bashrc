@@ -73,7 +73,7 @@ ns_enable_bash_completion
 
 # Will reuse any existing ssh-agent, but if a new one is needed and your
 # private key is password protected, you will be prompted.
-ns_unlock_keychain --once rsa personal
+ns_unlock_keychain --once rsa personal work
 
 ###########
 # ALIASES #
