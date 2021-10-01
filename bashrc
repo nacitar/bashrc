@@ -67,6 +67,7 @@ setterm -powerdown 0 &>/dev/null
 
 # Set prompt and titles
 ns_set_bash_prompt
+ns_wsl_osc99_prompt_command
 ns_set_titles_with_prompt
 ns_enable_dircolors
 ns_enable_bash_completion
