@@ -14,7 +14,7 @@ ns_unlock_keychain() {
   fi
   if [[ $# -eq 0 ]]; then
       # default to unlocking the default id
-      set -- "rsa"
+      set -- "default"
   fi
   while (($#)); do
     key_id="${1}"
@@ -36,7 +36,7 @@ ns_select_ssh_id() {
     key_id="${1}"
     key_root_path="${HOME}/.ssh/id_"
     key_path="${key_root_path}${key_id}"
-    selected_key_path="${key_root_path}rsa"
+    selected_key_path="${key_root_path}default"
     if [[ ! -e "${key_path}" ]]; then
       ns_error "No such ssh key: ${key_path}"
       return 1
