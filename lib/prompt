@@ -33,6 +33,6 @@ ns_set_titles_with_prompt() {
 }
 ns_wsl_osc99_prompt_command() {
   if ns_path_search 'wslpath' &>/dev/null; then
-    export PROMPT_COMMAND='printf "\e]9;9;%s\e\\" "$(wslpath -m "$PWD")"'
+    export PROMPT_COMMAND='printf "\e]9;9;%s\e\\" "$PWD"'
   fi
 }
