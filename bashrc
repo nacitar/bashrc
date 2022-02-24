@@ -22,7 +22,7 @@ source "${NS_LIBRARY_PATH}/framework"
 ############
 # LIBARIES #
 ############
-ns_library keychain prompt colordiff dict stringops developer
+ns_library keychain prompt colordiff dict stringops developer aws
 
 ###############
 # ENVIRONMENT #
