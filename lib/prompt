@@ -3,12 +3,17 @@
 ns_library tput stringops
 
 ns_bash_prompt() {
-  local ESTAT DIVCHR
+  local ESTAT DIVCHR GITSTAT
   # enclosing all escape sequences with \[ \] so it doesn't contribute to the line's character count
   ESTAT="\$(ECODE=\$?; [ \${ECODE} -eq 0 ] && echo '\[$(ns_tput_term_fg 4)\]' || echo '\[$(ns_tput_term_fg 1)\]'; exit \${ECODE})"
-  # more efficient way if you don't care about uontracked files
+  # more efficient way if you don't care about untracked files
   #GITSTAT_NOUNTRACKED="\$(ECODE=\$?; git diff-index --quiet HEAD -- 2>/dev/null; [ \$? -ne 1 ] && echo '\[$(ns_tput_term_fg 6)\]' || echo '\[$(ns_tput_term_fg 3)\]'; exit \${ECODE})"
-  GITSTAT="\$(ECODE=\$?; [ -z \"\$(git status --porcelain 2>/dev/null)\" ] && echo '\[$(ns_tput_term_fg 6)\]' || echo '\[$(ns_tput_term_fg 3)\]'; exit \${ECODE})"
+
+  # works perfectly, but if you're in a windows directory it will try to use linux git, which will be slow/inaccurate
+  #GITSTAT="\$(ECODE=\$?; [ -z \"\$(git status --porcelain 2>/dev/null)\" ] && echo '\[$(ns_tput_term_fg 6)\]' || echo '\[$(ns_tput_term_fg 3)\]'; exit \${ECODE})"
+
+  # works perfectly, but ignores checking git status if in a windows directory.
+  GITSTAT="\$(ECODE=\$?; case \"\$(df --output=fstype \"\$(pwd)\" | tail -1)\" in 9p|drvfs) echo '\[$(ns_tput_term_fg 6)\]' ;; *) [ -z \"\$(git status --porcelain 2>/dev/null)\" ] && echo '\[$(ns_tput_term_fg 6)\]' || echo '\[$(ns_tput_term_fg 3)\]' ;; esac; exit \${ECODE})"
 
   # Root prompt ends with #, non-root ends with $
   DIVCHR="\$(ECODE=\$?; [ \"\${EUID}\" -eq 0 ] && echo '#' || echo '\$'; exit \${ECODE})"
