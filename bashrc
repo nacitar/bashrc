@@ -122,7 +122,7 @@ alias p='cd -'
 alias md='mkdir'
 alias rd='rmdir'
 alias c='clear'
-alias n='yes "" | head -n"${LINES:=100}"'
+alias n='yes "" 2>/dev/null | head -n"${LINES:=100}"'
 
 # Editors
 if ns_path_search nvim &>/dev/null; then

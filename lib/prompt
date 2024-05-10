@@ -13,7 +13,7 @@ ns_bash_prompt() {
   #GITSTAT="\$(ECODE=\$?; [ -z \"\$(git status --porcelain 2>/dev/null)\" ] && echo '\[$(ns_tput_term_fg 6)\]' || echo '\[$(ns_tput_term_fg 3)\]'; exit \${ECODE})"
 
   # works perfectly, but ignores checking git status if in a windows directory.
-  GITSTAT="\$(ECODE=\$?; case \"\$(df --output=fstype \"\$(pwd)\" | tail -1)\" in 9p|drvfs) echo '\[$(ns_tput_term_fg 6)\]' ;; *) [ -z \"\$(git status --porcelain 2>/dev/null)\" ] && echo '\[$(ns_tput_term_fg 6)\]' || echo '\[$(ns_tput_term_fg 3)\]' ;; esac; exit \${ECODE})"
+  GITSTAT="\$(ECODE=\$?; case \"\$(df --output=fstype \"\$(pwd)\" | tail -1 2>/dev/null)\" in 9p|drvfs) echo '\[$(ns_tput_term_fg 6)\]' ;; *) [ -z \"\$(git status --porcelain 2>/dev/null)\" ] && echo '\[$(ns_tput_term_fg 6)\]' || echo '\[$(ns_tput_term_fg 3)\]' ;; esac; exit \${ECODE})"
 
   # Root prompt ends with #, non-root ends with $
   DIVCHR="\$(ECODE=\$?; [ \"\${EUID}\" -eq 0 ] && echo '#' || echo '\$'; exit \${ECODE})"
