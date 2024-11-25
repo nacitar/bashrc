@@ -79,7 +79,7 @@ ns_unlock_keychain --once default personal work
 ###########
 # ALIASES #
 ###########
-
+alias sudo='sudo '  # allow alias expansion of command after sudo
 alias trim='sed -e "s/^[[:space:]]*//;s/[[:space:]]*$//"'
 
 # -X: sort by extension
