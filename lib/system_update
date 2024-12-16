@@ -35,6 +35,9 @@ ns_system_update() {
     elif type -p yum &>/dev/null; then
         sudo yum clean all
         sudo yum update -y
+    elif type -p apk &>/dev/null; then
+        sudo apk update
+        sudo apk upgrade
     else
         &>2 echo "ERROR: couldn't identify package manager."
         exit 1
