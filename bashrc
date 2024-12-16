@@ -22,14 +22,15 @@ source "${NS_LIBRARY_PATH}/framework"
 ############
 # LIBARIES #
 ############
-ns_library keychain prompt colordiff dict stringops developer aws
+ns_library keychain prompt colordiff dict stringops developer aws system_update
 
 ###############
 # ENVIRONMENT #
 ###############
 
 # xterm/screen/etc.. get promoted to 256color variants if available
-if [[ "${TERM}" != *-256color ]] && ns_tput_terminfo_exists "${TERM}-256color"; then
+if [[ "${TERM}" != *-256color ]] \
+    && ns_tput_terminfo_exists "${TERM}-256color"; then
   export TERM="${TERM}-256color"
   ns_tput_init
 fi
@@ -37,7 +38,7 @@ fi
 HISTCONTROL=ignoreboth
 # append to the history file, don't overwrite it
 shopt -s histappend
-# after each command check the window size and keep LINES and COLUMNS up to date
+# after each command check window size and keep LINES and COLUMNS up to date
 shopt -s checkwinsize
 # disable history expansion so we can use ! in strings and filenames
 set +H
@@ -80,6 +81,7 @@ ns_unlock_keychain --once default personal work
 # ALIASES #
 ###########
 alias sudo='sudo '  # allow alias expansion of command after sudo
+alias update='ns_system_update'
 alias trim='sed -e "s/^[[:space:]]*//;s/[[:space:]]*$//"'
 
 # -X: sort by extension
