@@ -9,7 +9,7 @@ sudo -v || exit 1  # obtain sudo timestamp
 (  # loop to refresh sudo timestamp
     set +e
     while sleep 50; do
-        sudo -n -v
+        sudo -n -v &>/dev/null
     done
 ) &
 sudoloop_pid="${!}"
