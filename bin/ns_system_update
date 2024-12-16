@@ -1,0 +1,70 @@
+#!/bin/bash
+set -eu
+
+if [ "$(id -u)" -eq 0 ]; then
+    >&2 echo "ERROR: ${0} must NOT be ran with root privileges."
+    exit 1
+fi
+sudo -v || exit 1  # obtain sudo timestamp
+(  # loop to refresh sudo timestamp
+    set +e
+    while sleep 50; do
+        sudo -n -v
+    done
+) &
+sudoloop_pid="${!}"
+trap '[ -n "${sudoloop_pid}" ] && kill "${sudoloop_pid}" &>/dev/null' EXIT 
+
+get_python_version() {
+    if [ ${#} -ne 1 ]; then
+      >&2 echo "USAGE: get_python_version <binary-name-or-path>"
+      return 1
+    fi
+    if type -p "${1}" &>/dev/null; then
+        "${1}" -c 'import sys; print(sys.version)' 2>/dev/null
+    else
+        return 1
+    fi
+}
+python_version=''
+for python in python3 python ''; do
+    if [ -n "${python}" ] \
+            && type -p "${python}" &>/dev/null \
+            && "${python}" -m pipx --version &>/dev/null; then
+        python_version="$(get_python_version "${python}")"
+        break
+    fi
+done
+
+if type -p yay &>/dev/null; then
+    yay --noconfirm --sudoloop
+elif type -p pacman &>/dev/null; then
+    sudo pacman -Syu --noconfirm
+elif type -p apt-get &>/dev/null; then
+    sudo apt-get update -y
+    sudo apt-get dist-upgrade -y
+elif type -p dnf &>/dev/null; then
+    sudo dnf upgrade --refresh -y
+elif type -p yum &>/dev/null; then
+    sudo yum clean all
+    sudo yum update -y
+elif type -p apk &>/dev/null; then
+    sudo apk update
+    sudo apk upgrade
+elif type -p emerge &>/dev/null; then
+    sudo emerge --sync
+    if type -p eix-update &>/dev/null; then 
+        sudo eix-update
+    fi
+    sudo emerge -vDNu world
+else
+    >&2 echo "ERROR: couldn't identify package manager."
+    exit 1
+fi
+
+if [ -n "${python}" ]; then
+    if [ "${python_version}" != "$(get_python_version "${python}")" ]; then
+        "${python}" -m pipx reinstall-all
+    fi
+    "${python}" -m pipx upgrade-all
+fi
