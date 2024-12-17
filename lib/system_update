@@ -12,7 +12,9 @@ ns_python_version() {
     fi
 }
 
-ns_system_update() {
+ns_system_update() (  # runs in a subshell for set -eu
+    # written carefully to only run sudo once
+    set -eu
     local python python_version=''
     for python in python3 python ''; do
         if [ -n "${python}" ] \
@@ -66,4 +68,4 @@ ns_system_update() {
         fi
         "${python}" -m pipx upgrade-all
     fi
-}
+)
