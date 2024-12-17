@@ -38,8 +38,8 @@ done <<EOF
 /usr/local/sbin
 EOF
 
-# Add home bin, pipx .local/bin, and .bash/bin
-export PATH="${HOME}/bin:${HOME}/.local/bin:${HOME}/.bash/bin:${PATH}"
+# Add home bin and pipx .local/bin, even if they don't exist.
+export PATH="${HOME}/bin:${HOME}/.local/bin:${PATH}"
 export LD_LIBRARY_PATH="${HOME}/lib:${LD_LIBRARY_PATH}"
 
 # Determine if in a chroot

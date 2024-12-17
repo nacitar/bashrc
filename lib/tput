@@ -19,7 +19,7 @@ ns_tput_value() {
   else
     echo "${def_val}"
   fi
-  return $code
+  return "${code}"
 }
 ns_tput_cmd() {
   # this one doesn't take a default value
