@@ -1,0 +1,36 @@
+#!/bin/bash
+# NOTE: this only supports archlinux!
+ns_package_version() {
+    if [ ${#} -ne 1 ]; then
+        ns_error 'usage: ns_package_version <package-name>'
+        return 1
+    fi
+    local version
+    version="$(pacman -Q "${1}")"  # name + version + id
+    version="${version#* }"  # version + id 
+    version="${version%-*}"  # version
+    echo "${version}"
+}
+ns_plex_version() {
+    ns_package_version 'plex-media-server'
+}
+ns_restart_plex() {
+    sudo -- /bin/bash -ce '
+        systemctl daemon-reload
+        systemctl restart plexmediaserver
+        '
+}
+ns_system_update_and_restart_services() (  # subshell for set -eu
+    set -eu
+    local old_plex_version new_plex_version
+    old_plex_version="$(ns_plex_version)"
+    ns_system_update
+    new_plex_version="$(ns_plex_version)"
+    if [ "${old_plex_version}" != "${new_plex_version}" ]; then
+        echo "Plex updated: ${old_plex_version} ==> ${new_plex_version}"
+        echo "Restarting plex..."
+        ns_restart_plex
+    fi
+)
+# replace existing update alias
+alias update="ns_system_update_and_restart_services"

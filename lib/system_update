@@ -12,7 +12,7 @@ ns_python_version() {
     fi
 }
 
-ns_system_update() (  # runs in a subshell for set -eu
+ns_system_update() (  # subshell for set -eu
     # written carefully to only run sudo once
     set -eu
     local python python_version=''

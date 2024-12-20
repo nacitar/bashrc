@@ -94,3 +94,20 @@ ns_is_integral() {
   fi
   return 1
 }
+ns_install_sample() {
+    if [ $# -eq 0 ]; then
+        ns_error 'usage: ns_install_sample <sample-name> [<sample-name>...]'
+        return 1
+    fi
+    local sample_dir="${NS_LIBRARY_PATH}/local/sample_bashrc.d"
+    while (($#)); do
+        local sample_path="${sample_dir}/${1}"
+        if [[ ! -e "${sample_path}" ]]; then
+            ns_error "sample does not exist: ${sample_path}"
+            return 1
+        fi
+        ln -sf "../sample_bashrc.d/${1}" \
+            "${NS_LIBRARY_PATH}/local/bashrc.d/${1}"
+        shift
+    done
+}
