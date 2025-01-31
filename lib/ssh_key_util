@@ -1,31 +1,13 @@
 #!/bin/bash
 
-ns_unlock_keychain() {
-  if [[ "${1}" == "--once" ]]; then
-    once=1
-    shift
-  else
-    once=0
-  fi
-  # Without this check, interactive subshells needlessly run it again.
-  if [[ $once -eq 1 && -n "${SSH_AUTH_SOCK}" ]] && ns_is_integral "${SSH_AGENT_PID}"; then
-      # --once is specified, and there's already an agent.
-      return
-  fi
-  if [[ $# -eq 0 ]]; then
-      # default to unlocking the default id
-      set -- "default"
-  fi
-  while (($#)); do
-    key_id="${1}"
-    shift
-    key_file_name="id_${key_id}"
-    if [[ -f "${HOME}/.ssh/${key_file_name}" ]]; then
-      if ns_path_search keychain &>/dev/null; then
-        eval "$(keychain -q --nogui --eval --agents ssh "${key_file_name}")"
-      fi
+ns_ssh_agent() {
+  if [[ -z "${SSH_AUTH_SOCK}" ]] || [[ -z "${SSH_AGENT_PID}" ]]; then
+    if ns_path_search keychain &>/dev/null; then
+      eval "$(keychain -q --nogui --noask --eval --agents ssh)"
+    elif ns_path_search ssh-agent &>/dev/null; then
+      eval "$(ssh-agent -s)"
     fi
-  done
+  fi
 }
 
 ns_select_ssh_id() {

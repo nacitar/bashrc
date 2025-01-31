@@ -22,7 +22,7 @@ source "${NS_LIBRARY_PATH}/framework"
 ############
 # LIBARIES #
 ############
-ns_library keychain prompt colordiff dict stringops developer aws system_update
+ns_library ssh_key_util prompt colordiff dict stringops developer aws system_update
 
 ###############
 # ENVIRONMENT #
@@ -73,9 +73,8 @@ ns_set_titles_with_prompt
 ns_enable_dircolors
 ns_enable_bash_completion
 
-# Will reuse any existing ssh-agent, but if a new one is needed and your
-# private key is password protected, you will be prompted.
-ns_unlock_keychain --once default personal work
+# run the best ssh-agent available
+ns_ssh_agent
 
 ###########
 # ALIASES #
