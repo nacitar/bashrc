@@ -22,7 +22,7 @@ source "${NS_LIBRARY_PATH}/framework"
 ############
 # LIBARIES #
 ############
-ns_library ssh_key_util prompt colordiff dict stringops developer aws system_update
+ns_library neovim ssh_key_util prompt colordiff dict stringops developer aws system_update
 
 ###############
 # ENVIRONMENT #
