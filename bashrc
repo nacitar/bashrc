@@ -69,7 +69,7 @@ setterm -powerdown 0 &>/dev/null
 # Set prompt and titles
 ns_set_bash_prompt
 ns_wsl_osc99_prompt_command
-ns_set_titles_with_prompt
+ns_set_titles_with_prompt --abbreviate --local-no-host
 ns_enable_dircolors
 ns_enable_bash_completion
 
@@ -79,6 +79,12 @@ ns_ssh_agent
 ###########
 # ALIASES #
 ###########
+if [[ "${TERM}" == "xterm-kitty" ]]; then
+    if ns_path_search kitten &>/dev/null; then
+        alias icat='kitten icat'
+        #alias ssh='kitten ssh'
+    fi
+fi
 alias sudo='sudo '  # allow alias expansion of command after sudo
 alias update='ns_system_update'
 alias trim='sed -e "s/^[[:space:]]*//;s/[[:space:]]*$//"'

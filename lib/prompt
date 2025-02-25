@@ -8,7 +8,8 @@ ns_bash_prompt() {
   ESTAT="\$(ECODE=\$?; [ \${ECODE} -eq 0 ] && echo '\[$(ns_tput_term_fg 4)\]' || echo '\[$(ns_tput_term_fg 1)\]'; exit \${ECODE})"
 
   # works perfectly, but ignores checking git status if in a windows directory.
-  GITSTAT="\$(ECODE=\$?; case \"\$(df --output=fstype \"\$(pwd)\" | tail -1 2>/dev/null)\" in 9p|drvfs) echo '\[$(ns_tput_term_fg 6)\]' ;; *) [ -z \"\$(git status --porcelain 2>/dev/null)\" ] && echo '\[$(ns_tput_term_fg 6)\]' || echo '\[$(ns_tput_term_fg 3)\]' ;; esac; exit \${ECODE})"
+  # NOTE using PWD instead of \w because of '~' and needing quotes
+  GITSTAT="\$(ECODE=\$?; case \"\$(df --output=fstype \"\${PWD}\" | tail -1 2>/dev/null)\" in 9p|drvfs) echo '\[$(ns_tput_term_fg 6)\]' ;; *) [ -z \"\$(git status --porcelain 2>/dev/null)\" ] && echo '\[$(ns_tput_term_fg 6)\]' || echo '\[$(ns_tput_term_fg 3)\]' ;; esac; exit \${ECODE})"
 
   # Root prompt ends with #, non-root ends with $
   DIVCHR="\$(ECODE=\$?; [ \"\${EUID}\" -eq 0 ] && echo '#' || echo '\$'; exit \${ECODE})"
@@ -17,9 +18,9 @@ ns_bash_prompt() {
   # [user@host dir]#
   if [[ "$(ns_tput_colors)" -ge 8 ]]; then
     # there's at least 8 colors
-    echo "\[$(ns_tput_term_normal)\]\${NS_CHROOT:+(\${NS_CHROOT})}${ESTAT}\[$(ns_tput_term_bold)\][\[$(ns_tput_term_normal)$(ns_tput_term_fg 2)\]\u@\h \[$(ns_tput_term_bold)\]${GITSTAT}\w${ESTAT}]${DIVCHR}\[$(ns_tput_term_normal)\] "
+    echo "\[$(ns_tput_term_normal)\]\${NS_CHROOT:+(\${NS_CHROOT})}${ESTAT}\[$(ns_tput_term_bold)\][\[$(ns_tput_term_normal)$(ns_tput_term_fg 2)\]\\u@\\h \[$(ns_tput_term_bold)\]${GITSTAT}\\w${ESTAT}]${DIVCHR}\[$(ns_tput_term_normal)\] "
   else
-    echo "\${NS_CHROOT:+(\${NS_CHROOT})}[\u@\h \w]${DIVCHR} "
+    echo "\${NS_CHROOT:+(\${NS_CHROOT})}[\\u@\\h \\w]${DIVCHR} "
   fi
 }
 ns_set_bash_prompt() {
@@ -27,15 +28,32 @@ ns_set_bash_prompt() {
   PS1="$(ns_bash_prompt)"
 }
 ns_set_titles_with_prompt() {
+  local abbreviate="" local_no_host=""
+  while [ ${#} -gt 0 ]; do
+    case "${1}" in
+      --abbreviate) abbreviate=1 ;;
+      --local-no-host) local_no_host=1 ;;
+      *) >&2 echo "${0}: invalid argument ${1}"; return 1 ;;
+    esac
+    shift
+  done
   case "${TERM}" in
     # If this is an xterm set the title to user@host:dir
     xterm* | rxvt*)
-      PS1="\[\e]0;\${NS_CHROOT:+(\${NS_CHROOT})}\u@\h: \w\a\]${PS1}"
+      local show_host=1
+      if [[ -n "${local_no_host}" && ! ( -n "${SSH_CLIENT}" || -n "${SSH_TTY}" ) ]]; then
+        show_host=""
+      fi
+      local title_content="\[\e]0;\${NS_CHROOT:+(\${NS_CHROOT})}\\u${show_host:+@\\h}: \\w\\a\]"
+      if [ -n "${abbreviate}" ]; then
+        title_content="${title_content/\\w/\$(ns_abbreviate_dir \"\\w\")}"
+      fi
+      PS1="${title_content}${PS1}"
       ;;
   esac
 }
 ns_wsl_osc99_prompt_command() {
   if ns_path_search 'wslpath' &>/dev/null; then
-    export PROMPT_COMMAND='printf "\e]9;9;%s\e\\" "$PWD"'
+    PROMPT_COMMAND='printf "\e]9;9;%s\e\\" "${PWD}"'
   fi
 }
