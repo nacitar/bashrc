@@ -46,7 +46,7 @@ ns_set_titles_with_prompt() {
       fi
       local title_content="\[\e]0;\${NS_CHROOT:+(\${NS_CHROOT})}\\u${show_host:+@\\h}: \\w\\a\]"
       if [ -n "${abbreviate}" ]; then
-        title_content="${title_content/\\w/\$(ns_abbreviate_dir \"\\w\")}"
+        title_content="${title_content/\\w/\$(ECODE=\$?; ns_abbreviate_dir \"\\w\"; exit \$ECODE)}"
       fi
       PS1="${title_content}${PS1}"
       ;;
