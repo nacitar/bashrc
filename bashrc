@@ -4,30 +4,40 @@
 # ENVIRONMENT #
 ###############
 NS_LIBRARY_PATH="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
-while read -r ns_tempvar; do
-    # if it exists and isn't already in PATH
-    if [[ -d ${ns_tempvar} && ! ${PATH} =~ (^|:)${ns_tempvar}/?(:|$) ]]; then
-        export PATH="${ns_tempvar}:${PATH}"
+ns_add_path_if_missing() {
+    local check_exists=0
+    if [[ ${1} == "-e" ]]; then
+        check_exists=1
+        shift
     fi
-    # in reverse order of priority; the last entry will come first
-done <<EOF
-/opt/bin
-/opt/sbin
-/bin
-/sbin
-/usr/bin
-/usr/sbin
-/opt/local/bin
-/opt/local/sbin
-/usr/local/bin
-/usr/local/sbin
-${NS_LIBRARY_PATH}/bin
-${HOME}/.local/bin
-${HOME}/bin
-EOF
-unset ns_tempvar NS_LIBRARY_PATH
-
-export LD_LIBRARY_PATH="${HOME}/lib:${LD_LIBRARY_PATH}"
+    local full_path="${1}"
+    shift
+    while (($#)); do
+        if ((!check_exists)) || [[ -e "${1}" ]]; then
+            if [[ ! ${full_path} =~ (^|:)${1}/?(:|$) ]]; then
+                full_path="${1}:${full_path}"
+            fi
+        fi
+        shift
+    done
+    echo "${full_path%:}"
+}
+PATH="$(ns_add_path_if_missing -e "${PATH}" \
+        '/opt/bin' '/opt/sbin' \
+        '/bin' '/sbin' \
+        '/usr/bin' '/usr/sbin' \
+        '/opt/local/bin' '/opt/local/sbin' \
+        '/usr/local/bin' '/usr/local/sbin' \
+)"
+export PATH="$(ns_add_path_if_missing "${PATH}" \
+        "${NS_LIBRARY_PATH}/bin" \
+        "${HOME}/.local/bin" \
+        "${HOME}/bin" \
+)"
+export LD_LIBRARY_PATH="$(ns_add_path_if_missing "${LD_LIBRARY_PATH}" \
+        "${HOME}/lib"
+)"
+unset ns_add_path_if_missing NS_LIBRARY_PATH
 
 if [[ $- != *i* ]]; then
     # shell is non-interactive; bail
@@ -46,29 +56,33 @@ ns_ssh_agent() {
         fi
     fi
 }
-ns_select_ssh_id() {
+ns_select_default_ssh_id() {
     if [[ $# -ne 1 ]]; then
         >&2 echo "ERROR: must specify exactly one ssh id."
         return 1
     fi
-    local key_path=${HOME}/.ssh/id_${1}
-    local selected_key_path=${HOME}/.ssh/id_default
-    if [[ ! -e ${key_path} ]]; then
-        >&2 echo "ERROR: no such ssh key: ${key_path}"
+    local key_id="id_${1}" default_key=${HOME}/.ssh/id_default
+    if [[ "$(readlink "${default_key}" 2>/dev/null)" == ${key_id} ]]; then
+        return 0
+    fi
+    #ssh-add -d "${default_key}" &>/dev/null
+    local key=${HOME}/.ssh/${key_id}
+    if [[ ! -e ${key} ]]; then
+        >&2 echo "ERROR: no such ssh key: ${key}"
         return 1
     fi
-    local default_key_path
-    for default_key_path in "${selected_key_path}"{,.pub}; do
-        if [[ -L ${default_key_path} ]]; then
-            unlink "${default_key_path}"
-        elif [[ -e ${default_key_path} ]]; then
-            >&2 echo "ERROR: ssh key is not a symlink: ${default_key_path}"
+    local default_key_file
+    for default_key_file in "${default_key}"{,.pub}; do
+        if [[ -L ${default_key_file} ]]; then
+            unlink "${default_key_file}"
+        elif [[ -e ${default_key_file} ]]; then
+            >&2 echo "ERROR: ssh key is not a symlink: ${default_key_file}"
             return 1
         fi
     done
-    ln -s "${key_path##*/}" "${selected_key_path}"
-    if [[ -e ${key_path}.pub ]]; then
-      ln -s "${key_path##*/}.pub" "${selected_key_path}.pub"
+    ln -s "${key_id}" "${default_key}"
+    if [[ -e ${key}.pub ]]; then
+      ln -s "${key_id}.pub" "${default_key}.pub"
     fi
 }
 ns_is_integral() {
