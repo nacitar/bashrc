@@ -197,6 +197,7 @@ if command -v tput &>/dev/null; then
     fi
 fi
 ns_set_bash_prompt --target-title-path-length=30 --keep-path-levels=2
+ns_ssh_agent
 
 # force ignoredups and ignorespace
 HISTCONTROL=ignoreboth
