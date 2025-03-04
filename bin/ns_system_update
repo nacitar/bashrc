@@ -29,7 +29,7 @@ if command -v pacman &>/dev/null; then
         fi
         yay --noconfirm --sudoloop
     fi
-    sudo pacdiff
+    sudo -- /bin/bash -ce "DIFFPROG=$(printf %q "${DIFFPROG}") pacdiff"
 elif command -v apt-get &>/dev/null; then
     sudo -- /bin/bash -ce '
         apt-get update -y
