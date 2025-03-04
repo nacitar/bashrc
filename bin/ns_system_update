@@ -27,7 +27,7 @@ if command -v pacman &>/dev/null; then
                 'systems with the AUR helper "yay".'
             exit 1
         fi
-        yay --noconfirm --sudoloop
+        yay --noconfirm --sudoloop -Su
     fi
     sudo -- /bin/bash -ce "DIFFPROG=$(printf %q "${DIFFPROG}") pacdiff"
 elif command -v apt-get &>/dev/null; then
