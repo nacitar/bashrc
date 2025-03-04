@@ -19,17 +19,17 @@ for python in python3 python ''; do
     fi
 done
 
-if command -v yay &>/dev/null; then
-    if [ "$(id -u)" -eq 0 ]; then
-        >&2 echo "ERROR: ${0} must NOT be ran with root privileges on" \
-            'systems with the AUR helper "yay".'
-        exit 1
+if command -v pacman &>/dev/null; then
+    sudo pacman -Sy archlinux-keyring --noconfirm --needed
+    if command -v yay &>/dev/null; then
+        if [ "$(id -u)" -eq 0 ]; then
+            >&2 echo "ERROR: ${0} must NOT be ran with root privileges on" \
+                'systems with the AUR helper "yay".'
+            exit 1
+        fi
+        yay --noconfirm --sudoloop
     fi
-    sudo pacman -Sy archlinux-keyring --noconfirm --needed
-    yay --noconfirm --sudoloop
-elif command -v pacman &>/dev/null; then
-    sudo pacman -Sy archlinux-keyring --noconfirm --needed
-    sudo pacman -Syu --noconfirm
+    sudo pacdiff
 elif command -v apt-get &>/dev/null; then
     sudo -- /bin/bash -ce '
         apt-get update -y
