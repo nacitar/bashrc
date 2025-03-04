@@ -170,14 +170,14 @@ ns_set_bash_prompt() {
         # shellcheck disable=2016
         PS1="$(printf %s \
             '$(E=$?;((E))' \
-            "&&ESTYLE='$(tput setaf 1 bold 2>/dev/null)'" \
-            "||ESTYLE='$(tput setaf 4 bold 2>/dev/null)'" \
+            "&&ESTYLE='$(tput setaf 9 bold 2>/dev/null)'" \
+            "||ESTYLE='$(tput setaf 12 bold 2>/dev/null)'" \
             ";echo -n \"\[${reset}\$ESTYLE\][" \
             "\[${reset}$(tput setaf 2 2>/dev/null)\]\\u@\\h \[\"" \
             ';[[ ! $(wslpath -ma "$PWD" 2>/dev/null) =~ ^(/.*)?$' \
             ' || -z $(git status --porcelain 2>/dev/null) ]]' \
-            "&&echo -n '$(tput setaf 6 bold 2>/dev/null)'" \
-            "||echo -n '$(tput setaf 3 bold 2>/dev/null)'" \
+            "&&echo -n '$(tput setaf 14 2>/dev/null)'" \
+            "||echo -n '$(tput setaf 11 2>/dev/null)'" \
             ';echo -n "\]\w\[$ESTYLE\]]"' \
             ';exit $E)' \
         )\\\$\[${reset}\] "
