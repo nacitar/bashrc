@@ -3,16 +3,7 @@
 ###############
 # ENVIRONMENT #
 ###############
-while read -r ns_tempvar; do
-    if [[ -r ${ns_tempvar} ]]; then
-        source "${ns_tempvar}"
-        break  # only source the the first one found
-    fi
-done <<EOF
-/etc/bash.bashrc
-/etc/bash/bashrc
-/etc/bashrc
-EOF
+NS_LIBRARY_PATH="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
 while read -r ns_tempvar; do
     # if it exists and isn't already in PATH
     if [[ -d ${ns_tempvar} && ! ${PATH} =~ (^|:)${ns_tempvar}/?(:|$) ]]; then
@@ -30,10 +21,12 @@ done <<EOF
 /opt/local/sbin
 /usr/local/bin
 /usr/local/sbin
+${NS_LIBRARY_PATH}/bin
+${HOME}/.local/bin
+${HOME}/bin
 EOF
-unset ns_tempvar
+unset ns_tempvar NS_LIBRARY_PATH
 
-export PATH="${HOME}/bin:${HOME}/.local/bin:${PATH}"
 export LD_LIBRARY_PATH="${HOME}/lib:${LD_LIBRARY_PATH}"
 
 if [[ $- != *i* ]]; then
@@ -190,6 +183,7 @@ ns_set_bash_prompt() {
     ))\"")
     # osc99 for wsl + windows terminal so new tabs open in same directory
     if command -v wslpath &>/dev/null; then
+        # shellcheck disable=2016
         PROMPT_COMMAND+=('printf "\e]9;9;%s\e\\" "${PWD}"')
     fi
 }
@@ -274,4 +268,5 @@ alias c='clear'
 alias n='yes "" 2>/dev/null | head -n"${LINES:=100}"'
 
 # Efficiency
+# shellcheck disable=2139
 alias make="make -j$(($(nproc)+1))"

@@ -1,0 +1,24 @@
+#!/bin/bash
+# NOTE: this only supports archlinux!
+set -eu
+
+ns_plex_version() {
+    local package='plex-media-server' version
+    version="$(pacman -Q "${package}")"  # name + version + id
+    version="${version#* }"  # version + id 
+    version="${version%-*}"  # version
+    echo "${version}"
+
+}
+
+old_plex_version="$(ns_plex_version)"
+ns_system_update
+new_plex_version="$(ns_plex_version)"
+if [ "${old_plex_version}" != "${new_plex_version}" ]; then
+    echo "Plex updated: ${old_plex_version} ==> ${new_plex_version}"
+    echo "Restarting plex..."
+    sudo -- /bin/bash -ce '
+        systemctl daemon-reload
+        systemctl restart plexmediaserver
+        '
+fi
