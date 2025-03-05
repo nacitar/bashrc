@@ -285,3 +285,7 @@ alias n='yes "" 2>/dev/null | head -n"${LINES:=100}"'
 # Efficiency
 # shellcheck disable=2139
 alias make="make -j$(($(nproc)+1))"
+
+if [[ $TERM == xterm-kitty ]]; then
+    alias icat="kitten icat"
+fi
