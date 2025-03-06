@@ -7,7 +7,7 @@ A simple bashrc, with various features.
   - intelligent window title setting
     - abbreviates paths in the window title in order to make terminal tabs that
     size to fit the title (e.g. tmux, kitty, ...) to save as much horizontal
-    space as possible.  Always keeps the last two directory components, but
+    space as possible.  Always keeps the last 2 directory components, but
     abbreviates every other to try to get under 30 characters.
       - can be tweaked by putting your own call to `ns_set_bash_prompt` in your
         `~/.bashrc`; look at the existing call to see the arguments.
