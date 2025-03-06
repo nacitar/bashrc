@@ -22,21 +22,23 @@ ns_add_path_if_missing() {
     done
     echo "${full_path%:}"
 }
-PATH="$(ns_add_path_if_missing -e "${PATH}" \
+PATH="$(ns_add_path_if_missing \
+    "$(ns_add_path_if_missing -e "${PATH}" \
         '/opt/bin' '/opt/sbin' \
         '/bin' '/sbin' \
         '/usr/bin' '/usr/sbin' \
         '/opt/local/bin' '/opt/local/sbin' \
         '/usr/local/bin' '/usr/local/sbin' \
+    )" \
+    "${NS_LIBRARY_PATH}/bin" \
+    "${HOME}/.local/bin" \
+    "${HOME}/bin" \
 )"
-export PATH="$(ns_add_path_if_missing "${PATH}" \
-        "${NS_LIBRARY_PATH}/bin" \
-        "${HOME}/.local/bin" \
-        "${HOME}/bin" \
-)"
-export LD_LIBRARY_PATH="$(ns_add_path_if_missing "${LD_LIBRARY_PATH}" \
+export PATH
+LD_LIBRARY_PATH="$(ns_add_path_if_missing "${LD_LIBRARY_PATH}" \
         "${HOME}/lib"
 )"
+export LD_LIBRARY_PATH
 unset ns_add_path_if_missing NS_LIBRARY_PATH
 
 if [[ $- != *i* ]]; then
@@ -62,7 +64,7 @@ ns_select_default_ssh_id() {
         return 1
     fi
     local key_id="id_${1}" default_key=${HOME}/.ssh/id_default
-    if [[ "$(readlink "${default_key}" 2>/dev/null)" == ${key_id} ]]; then
+    if [[ $(readlink "${default_key}" 2>/dev/null) == "${key_id}" ]]; then
         return 0
     fi
     #ssh-add -d "${default_key}" &>/dev/null
@@ -164,21 +166,33 @@ ns_set_bash_prompt() {
     if command -v tput &>/dev/null; then
         # hash everything used by the prompt
         hash tput wslpath git &>/dev/null
-        local reset
+        local reset error success clean dirty identity
         reset="$(tput sgr0 2>/dev/null)"
+        identity="$(tput setaf 2 2>/dev/null)"
+        if [[ $(tput colors 2>/dev/null) -ge 16 ]]; then
+            # these use bright colors (>8) colors
+            error="$(tput setaf 9 bold 2>/dev/null)"
+            success="$(tput setaf 12 bold 2>/dev/null)"
+            clean="$(tput setaf 14 2>/dev/null)"
+            dirty="$(tput setaf 11 2>/dev/null)"
+        else
+            # for < 16 colors such as the framebuffer, TERM of 'linux', ...
+            # same colors (other than palette), but not really bold.
+            error="$(tput setaf 1 bold 2>/dev/null)"
+            success="$(tput setaf 4 bold 2>/dev/null)"
+            clean="$(tput setaf 6 bold 2>/dev/null)"
+            dirty="$(tput setaf 3 bold 2>/dev/null)"
+        fi
         # NOTE: intentionally disabling git status check on WSL paths (slow)
         # shellcheck disable=2016
         PS1="$(printf %s \
             '$(E=$?;((E))' \
-            "&&ESTYLE='$(tput setaf 9 bold 2>/dev/null)'" \
-            "||ESTYLE='$(tput setaf 12 bold 2>/dev/null)'" \
-            ";echo -n \"\[${reset}\$ESTYLE\][" \
-            "\[${reset}$(tput setaf 2 2>/dev/null)\]\\u@\\h \[\"" \
+            "&&STATUS='${error}'||STATUS='${success}'; echo -n" \
+            " \"\[${reset}\$STATUS\][\[${reset}${identity}\]\\u@\\h \[\"" \
             ';[[ ! $(wslpath -ma "$PWD" 2>/dev/null) =~ ^(/.*)?$' \
             ' || -z $(git status --porcelain 2>/dev/null) ]]' \
-            "&&echo -n '$(tput setaf 14 2>/dev/null)'" \
-            "||echo -n '$(tput setaf 11 2>/dev/null)'" \
-            ';echo -n "\]\w\[$ESTYLE\]]"' \
+            "&&echo -n '${clean}'||echo -n '${dirty}'" \
+            ';echo -n "\]\w\[$STATUS\]]"' \
             ';exit $E)' \
         )\\\$\[${reset}\] "
     else
