@@ -18,24 +18,24 @@ save as much horizontal space as possible, while not losing useful information.
 installation
 ============
 
-Simply run install.sh and it will prepend a line to your .bashrc making it
-source this bashrc, creating .bashrc if it doesn't exist.  This is not
-destructive and will preserve your .bashrc fully.  This approach allows you to
-use this bashrc while also conveniently still having a local configuration.
+Simply run install.sh and it will prepend a line to your `.bashrc` making it
+source this bashrc, creating `.bashrc` if it doesn't exist.  This is not
+destructive and will preserve your `.bashrc` fully.  This approach allows you
+to use this bashrc while also conveniently still having a local configuration.
 
-It recommended by the bash info pages (and generally) to make a .bash\_profile
-that sources .bashrc so login shells also get the configuration.  If you desire
+It recommended by the bash info pages (and generally) to make a `.bash_profile`
+that sources `.bashrc` so login shells also get the configuration.  If you desire
 this you can pass the argument --replace-bash-profile and it will **REPLACE**
-your .bash\_profile with one that does.  This **IS** destructive as the
+your `.bash_profile` with one that does.  This **IS** destructive as the
 argument name implies and is simply a convenience.  Most users will want to
 pass this flag, but if you have preferences surrounding this you're clearly
 knowledgeable enough to not need my advice.
 
-An example installation into "$HOME/.bash":
+An example installation into "${HOME}/.bash":
 
 ```
-git clone https://github.com/nacitar/bashrc.git "$HOME/.bash"
-"$HOME/.bash/install.sh --replace-bash-profile"
+git clone https://github.com/nacitar/bashrc.git "${HOME}/.bash"
+"${HOME}/.bash/install.sh --replace-bash-profile"
 ```
 
 
