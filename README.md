@@ -2,9 +2,19 @@ bashrc
 ======
 
 A simple bashrc, with various features.
-- a functional bash prompt with abbreviated paths for the window title in order
-to make terminal tabs that size to fit the title (e.g. tmux, kitty, ...) to
-save as much horizontal space as possible, while not losing useful information.
+- a functional bash prompt.
+  - colorized in a manner that indicates the exit status of the last command.
+  - intelligent window title setting
+    - abbreviates paths in the window title in order to make terminal tabs that
+    size to fit the title (e.g. tmux, kitty, ...) to save as much horizontal
+    space as possible.  Always keeps the last two directory components, but
+    abbreviates every other to try to get under 30 characters.
+      - can be tweaked by putting your own call to `ns_set_bash_prompt` in your
+        `~/.bashrc`; look at the existing call to see the arguments.
+    - if connected over ssh, shows `user@host` like usual.
+    - if local, doesn't show `user@host` for the user that started X/Wayland,
+    as that is sanely the 'default' user.  If any other user, shows `user` but
+    removes `@host`.
 - automatic starting of an ssh agent (keychain or ssh-agent).
 - useful settings and aliases.
 - (WIP) two scripts for updating systems.
