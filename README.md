@@ -13,6 +13,9 @@ save as much horizontal space as possible, while not losing useful information.
     - interactively merges updated configuration files at the end (if needed).
   - ns\_archlinux\_update\_with\_plex: updates the system with extra logic to
     restart plex-media-server if it was updated.  ArchLinux only.
+- sets +H to disable history expansion, for safety and to avoid unexpected
+  behavior.  If you're someone who uses this feature, simply add set -H to
+  your `~/.bashrc` after installation to override the setting.
 
 
 installation
