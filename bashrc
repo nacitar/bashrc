@@ -118,8 +118,13 @@ ns_abbreviate_dir() {  # NOTE: simple argument handling for speed in prompt
     if [[ ${dir} == "${HOME}"* ]]; then
         dir="~${dir:${#HOME}}"
     fi
+    # NOTE: could remove IFS=/, and use:
+    #   local length=${#dir} parts
+    #   readarray -d '/' -t parts <<< "${dir}"
+    # ... but it is slower and functions identically.
+    #
     # shellcheck disable=2206
-    local parts=(${dir}) length=${#dir}
+    local length=${#dir} parts=(${dir})
     local i=-1 end=$((${#parts[@]}-keep))
     while ((++i < end && length > max)); do
         if [[ "${parts[i]:0:1}" = '.' ]]; then

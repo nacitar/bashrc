@@ -20,7 +20,7 @@ for python in python3 python ''; do
 done
 
 if command -v pacman &>/dev/null; then
-    sudo pacman -Sy archlinux-keyring --noconfirm --needed
+    sudo pacman -Sy --noconfirm --needed archlinux-keyring
     if command -v yay &>/dev/null; then
         if [ "$(id -u)" -eq 0 ]; then
             >&2 echo "ERROR: ${0} must NOT be ran with root privileges on" \
@@ -29,7 +29,24 @@ if command -v pacman &>/dev/null; then
         fi
         yay --noconfirm --sudoloop -Su
     fi
-    sudo -- /bin/bash -ce "DIFFPROG=$(printf %q "${DIFFPROG}") pacdiff"
+    readarray -t orphans < <(pacman -Qtdq || true)
+    if (( ${#orphans[@]} )); then
+        sudo pacman -Rns --noconfirm "${orphans[@]}"
+    fi
+    # NOTE: paccache is suggested to be setup as a pacman hook
+    # https://averagelinuxuser.com/clean-arch-linux/#1-clean-package-cache
+    if command -v pacdiff &>/dev/null; then
+        if [[ -z ${DIFFPROG} ]]; then
+            if command -v nvim &>/dev/null; then
+                DIFFPROG="nvim -d"
+            else
+                DIFFPROG="vim -d"
+            fi
+        fi
+        sudo -- /bin/bash -ce "DIFFPROG=$(printf %q "${DIFFPROG}") pacdiff"
+    else
+        >&2 echo "WARNING: pacman-contrib not installed; cannot run pacdiff!"
+    fi
 elif command -v apt-get &>/dev/null; then
     sudo -- /bin/bash -ce '
         apt-get update -y
