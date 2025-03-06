@@ -48,7 +48,7 @@ An example installation into "${HOME}/.bash":
 
 ```
 git clone https://github.com/nacitar/bashrc.git "${HOME}/.bash"
-"${HOME}/.bash/install.sh --replace-bash-profile"
+"${HOME}/.bash/install.sh" --replace-bash-profile
 ```
 
 
