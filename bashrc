@@ -220,6 +220,21 @@ ns_set_bash_prompt() {
         PROMPT_COMMAND+=('printf "\e]9;9;%s\e\\" "${PWD}"')
     fi
 }
+ns_benchmark() {
+    local iterations=${1}; shift
+    local function_name=${1}; shift
+    local start_time end_time
+    local i
+
+    start_time=$(date +%s%N)
+    for ((i = 0; i < iterations; i++)); do
+        "${function_name}" "${@}" &>/dev/null
+    done
+    end_time=$(date +%s%N)
+
+    elapsed=$(( (end_time - start_time) / 1000000 ))
+    echo "${function_name}: ${elapsed}ms"
+}
 
 #################
 # CONFIGURATION #

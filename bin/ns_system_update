@@ -11,9 +11,11 @@ ns_python_version() {
 
 python_version=''
 for python in python3 python ''; do
-    if [ -n "${python}" ] \
-            && command -v "${python}" &>/dev/null \
-            && "${python}" -m pipx --version &>/dev/null; then
+    if [[ -n ${python} ]] && command -v "${python}" &>/dev/null; then
+        base_python="$("${python}" -c 'import sys; print(f"{sys.base_prefix}/bin")')/${python}"
+        if command -v "${base_python}" &>/dev/null; then
+            python=${base_python}
+        fi
         python_version="$(ns_python_version "${python}")"
         break
     fi
@@ -77,7 +79,7 @@ fi
 
 if [ -n "${python}" ]; then
     if [ "${python_version}" != "$(ns_python_version "${python}")" ]; then
-        "${python}" -m pipx reinstall-all
+        pipx reinstall-all
     fi
-    "${python}" -m pipx upgrade-all
+    pipx upgrade-all
 fi
