@@ -9,17 +9,19 @@ ns_python_version() {
     fi
 }
 
-python_version=''
-for python in python3 python ''; do
-    if [[ -n ${python} ]] && command -v "${python}" &>/dev/null; then
-        base_python="$("${python}" -c 'import sys; print(f"{sys.base_prefix}/bin")')/${python}"
-        if command -v "${base_python}" &>/dev/null; then
-            python=${base_python}
+if command -v pipx &>/dev/null; then
+    for python in python3 python ''; do
+        if [[ -n ${python} ]] && command -v "${python}" &>/dev/null; then
+            base_python="$("${python}" -c 'import sys; print(f"{sys.base_prefix}/bin")')/${python}"
+            if command -v "${base_python}" &>/dev/null; then
+                python=${base_python}
+            fi
+            python_version="$(ns_python_version "${python}")"
+            pipx_reinstall_check=1
+            break
         fi
-        python_version="$(ns_python_version "${python}")"
-        break
-    fi
-done
+    done
+fi
 
 if command -v pacman &>/dev/null; then
     sudo pacman -Sy --noconfirm --needed archlinux-keyring
@@ -77,8 +79,8 @@ else
     exit 1
 fi
 
-if [ -n "${python}" ]; then
-    if [ "${python_version}" != "$(ns_python_version "${python}")" ]; then
+if [[ -n "${pipx_reinstall_check:-}" ]]; then
+    if [[ ${python_version} != "$(ns_python_version "${python}")" ]]; then
         pipx reinstall-all
     fi
     pipx upgrade-all
