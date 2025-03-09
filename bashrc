@@ -204,6 +204,7 @@ ns_set_bash_prompt() {
         >&2 echo "WARNING: tput is not in PATH, cannot colorize bash prompt!"
         PS1='[\u@\h \w]\$ '
     fi
+    PS1="${VIRTUAL_ENV_PROMPT:+(${VIRTUAL_ENV_PROMPT}) }${PS1}"  # venv prefix
     # PROMPT_COMMAND is an array; simply assigning a string only sets [0]
     # shellcheck disable=2016
     PROMPT_COMMAND=("printf '\e]0;%s\a' \"\$($(printf %s \

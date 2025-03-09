@@ -8,19 +8,30 @@ ns_python_version() {
         return 1
     fi
 }
-
-if command -v pipx &>/dev/null; then
+ns_get_system_python() {
+    if [[ -n ${VIRTUAL_ENV:-} ]]; then
+        # remove the the venv from PATH
+        local NEW_PATH=":${PATH}:"
+        NEW_PATH=${NEW_PATH//:${VIRTUAL_ENV}\/bin:/:}
+        NEW_PATH=${NEW_PATH#:}
+        local PATH=${NEW_PATH%:}
+    fi
     for python in python3 python ''; do
-        if [[ -n ${python} ]] && command -v "${python}" &>/dev/null; then
-            base_python="$("${python}" -c 'import sys; print(f"{sys.base_prefix}/bin")')/${python}"
-            if command -v "${base_python}" &>/dev/null; then
-                python=${base_python}
-            fi
-            python_version="$(ns_python_version "${python}")"
-            pipx_reinstall_check=1
-            break
+        if [[ -n ${python} ]]; then
+            python=$(type -P "${python}" 2>/dev/null)
+            [[ -n ${python} ]] && break
         fi
     done
+    echo "${python}"
+}
+
+pipx_reinstall_check=''
+if command -v pipx &>/dev/null; then
+    python="$(ns_get_system_python)"
+    if [[ -n "${python}" ]]; then
+        python_version="$(ns_python_version "${python}")"
+        pipx_reinstall_check=1
+    fi
 fi
 
 if command -v pacman &>/dev/null; then
@@ -79,7 +90,7 @@ else
     exit 1
 fi
 
-if [[ -n "${pipx_reinstall_check:-}" ]]; then
+if [[ -n "${pipx_reinstall_check}" ]]; then
     if [[ ${python_version} != "$(ns_python_version "${python}")" ]]; then
         pipx reinstall-all
     fi

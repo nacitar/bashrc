@@ -21,7 +21,7 @@ error() {
     >&2 printf "\nERROR: %s: %s\n" "${0##*/}" "${*}"
     exit 1
 }
-replace_bash_profile=
+replace_bash_profile=''
 while [ ${#} -gt 0 ]; do
     case "${1}" in
         -h|--help) show_usage; exit 0 ;;
@@ -34,8 +34,8 @@ while [ ${#} -gt 0 ]; do
     shift
 done
 
-NS_LIBRARY_PATH="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
-source_path="${NS_LIBRARY_PATH}/bashrc"
+script_dir="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
+source_path="${script_dir}/bashrc"
 if [[ ${source_path} == "${HOME}"* ]]; then
     source_path="\${HOME}${source_path:${#HOME}}"
 fi
@@ -44,7 +44,7 @@ source_comment='# ns bashrc (comment used by install script)'
 source_line="${source_command}  ${source_comment}"
 
 touch "${bashrc_file}"
-got_first_line= shebang= old_source_line= lines=()
+got_first_line='' shebang='' old_source_line='' lines=()
 while read -r line; do
     if [[ -z ${got_first_line} ]]; then
         if [[ -z ${shebang} && ${line} == '#!'* ]]; then
@@ -84,5 +84,5 @@ if [[ ${old_source_line} != "${source_line}" ]]; then
 fi
 
 if [[ -n ${replace_bash_profile} ]]; then
-    cp -f "${NS_LIBRARY_PATH}/bash_profile" "${HOME}/.bash_profile"
+    cp -f "${script_dir}/bash_profile" "${HOME}/.bash_profile"
 fi
