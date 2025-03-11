@@ -1,6 +1,7 @@
 #!/bin/bash
 # NOTE: this only supports archlinux!
 set -eu
+script_dir="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
 
 ns_plex_version() {
     local package='plex-media-server' version
@@ -12,7 +13,7 @@ ns_plex_version() {
 }
 
 old_plex_version="$(ns_plex_version)"
-ns_system_update
+"${script_dir}"/ns_system_update
 new_plex_version="$(ns_plex_version)"
 if [ "${old_plex_version}" != "${new_plex_version}" ]; then
     echo "Plex updated: ${old_plex_version} ==> ${new_plex_version}"

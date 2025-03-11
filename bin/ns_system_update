@@ -1,38 +1,6 @@
 #!/bin/bash
 set -eu
-ns_python_version() {
-    local binary="${1}"
-    if command -v "${binary}" &>/dev/null; then
-        "${binary}" -c 'import sys; print(sys.version)' 2>/dev/null
-    else
-        return 1
-    fi
-}
-ns_get_system_python() {
-    if [[ -n ${VIRTUAL_ENV:-} ]]; then
-        # remove the the venv from PATH
-        local NEW_PATH=":${PATH}:"
-        NEW_PATH=${NEW_PATH//:${VIRTUAL_ENV}\/bin:/:}
-        NEW_PATH=${NEW_PATH#:}
-        local PATH=${NEW_PATH%:}
-    fi
-    for python in python3 python ''; do
-        if [[ -n ${python} ]]; then
-            python=$(type -P "${python}" 2>/dev/null)
-            [[ -n ${python} ]] && break
-        fi
-    done
-    echo "${python}"
-}
-
-pipx_reinstall_check=''
-if command -v pipx &>/dev/null; then
-    python="$(ns_get_system_python)"
-    if [[ -n "${python}" ]]; then
-        python_version="$(ns_python_version "${python}")"
-        pipx_reinstall_check=1
-    fi
-fi
+script_dir="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
 
 if command -v pacman &>/dev/null; then
     sudo pacman -Sy --noconfirm --needed archlinux-keyring
@@ -90,9 +58,4 @@ else
     exit 1
 fi
 
-if [[ -n "${pipx_reinstall_check}" ]]; then
-    if [[ ${python_version} != "$(ns_python_version "${python}")" ]]; then
-        pipx reinstall-all
-    fi
-    pipx upgrade-all
-fi
+"${script_dir}"/ns_pipx_update

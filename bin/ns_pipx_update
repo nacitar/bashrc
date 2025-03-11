@@ -1,0 +1,27 @@
+#!/bin/bash
+set -eu
+if command -v pipx &>/dev/null; then
+    # remove any existing venv from PATH
+    if [[ -n ${VIRTUAL_ENV:-} ]]; then
+        NEW_PATH=":${PATH}:"
+        NEW_PATH=${NEW_PATH//:${VIRTUAL_ENV}\/bin:/:}
+        NEW_PATH=${NEW_PATH#:}
+        PATH=${NEW_PATH%:}
+        unset VIRTUAL_ENV
+    fi
+    for package_path in "${HOME}"/.local/share/pipx/venvs/*; do
+        [[ ! -d ${package_path} ]] && continue
+        python_binary=${package_path}/bin/python
+        if [[ ! -x ${python_binary} ]]; then
+            package_name="${package_path##*/}"
+            echo "Reinstalling pipx package: ${package_name}"
+            if ! pipx reinstall "${package_name}"; then
+                >&2 echo "ERROR: failed to reinstall ${package_name}"
+                return 1
+            fi
+        fi
+    done
+    pipx upgrade-all
+else
+    >&2 echo "WARNING: pipx isn't installed; nothing to do."
+fi

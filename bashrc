@@ -3,7 +3,7 @@
 ###############
 # ENVIRONMENT #
 ###############
-NS_LIBRARY_PATH="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
+NS_BASH_PATH="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
 ns_add_path_if_missing() {
     local check_exists=0
     if [[ ${1} == "-e" ]]; then
@@ -30,7 +30,7 @@ PATH="$(ns_add_path_if_missing \
         '/opt/local/bin' '/opt/local/sbin' \
         '/usr/local/bin' '/usr/local/sbin' \
     )" \
-    "${NS_LIBRARY_PATH}/bin" \
+    "${NS_BASH_PATH}/bin" \
     "${HOME}/.local/bin" \
     "${HOME}/bin" \
 )"
@@ -39,7 +39,7 @@ LD_LIBRARY_PATH="$(ns_add_path_if_missing "${LD_LIBRARY_PATH}" \
         "${HOME}/lib"
 )"
 export LD_LIBRARY_PATH
-unset ns_add_path_if_missing NS_LIBRARY_PATH
+unset ns_add_path_if_missing NS_BASH_PATH
 
 if [[ $- != *i* ]]; then
     # shell is non-interactive; bail
