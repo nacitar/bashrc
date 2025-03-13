@@ -13,7 +13,7 @@ ns_plex_version() {
 }
 
 old_plex_version="$(ns_plex_version)"
-"${script_dir}"/ns_system_update
+"${script_dir}"/ns-system-update
 new_plex_version="$(ns_plex_version)"
 if [ "${old_plex_version}" != "${new_plex_version}" ]; then
     echo "Plex updated: ${old_plex_version} ==> ${new_plex_version}"
