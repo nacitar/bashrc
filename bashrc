@@ -67,12 +67,12 @@ ns_select_default_ssh_id() {
     if [[ $(readlink "${default_key}" 2>/dev/null) == "${key_id}" ]]; then
         return 0
     fi
-    #ssh-add -d "${default_key}" &>/dev/null
     local key=${HOME}/.ssh/${key_id}
     if [[ ! -e ${key} ]]; then
         >&2 echo "ERROR: no such ssh key: ${key}"
         return 1
     fi
+    ssh-add -d "${default_key}" &>/dev/null
     local default_key_file
     for default_key_file in "${default_key}"{,.pub}; do
         if [[ -L ${default_key_file} ]]; then
