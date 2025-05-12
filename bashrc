@@ -52,7 +52,7 @@ fi
 ns_ssh_agent() {
     if [[ -z ${SSH_AUTH_SOCK} || -z ${SSH_AGENT_PID} ]]; then
         if command -v keychain &>/dev/null; then
-            eval "$(keychain -q --nogui --noask --eval --agents ssh)"
+            eval "$(keychain -q --nogui --noask --eval)"
         elif command -v ssh-agent &>/dev/null; then
             eval "$(ssh-agent -s)"
         fi
