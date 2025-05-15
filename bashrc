@@ -10,12 +10,13 @@ ns_add_path_if_missing() {
         check_exists=1
         shift
     fi
-    local full_path="${1}"
+    local full_path=${1}
     shift
     while (($#)); do
-        if ((!check_exists)) || [[ -e "${1}" ]]; then
-            if [[ ! ${full_path} =~ (^|:)${1}/?(:|$) ]]; then
-                full_path="${1}:${full_path}"
+        local entry=${1%/}
+        if ((!check_exists)) || [[ -e ${entry} ]]; then
+            if [[ ! ${full_path} =~ (^|:)${entry}/?(:|$) ]]; then
+                full_path=${entry}:${full_path}
             fi
         fi
         shift
@@ -29,6 +30,7 @@ PATH=$(ns_add_path_if_missing \
         '/usr/bin' '/usr/sbin' \
         '/opt/local/bin' '/opt/local/sbin' \
         '/usr/local/bin' '/usr/local/sbin' \
+        "${HOME}/.integration/path.d"/*/ \
     )" \
     "${ns_bash_path}/bin" \
     "${HOME}/.local/bin" \
@@ -41,14 +43,12 @@ LD_LIBRARY_PATH=$(ns_add_path_if_missing "${LD_LIBRARY_PATH}" \
 export LD_LIBRARY_PATH
 unset ns_add_path_if_missing ns_bash_path
 
-if [[ -d "${HOME}/.bashrc.d" ]]; then
-    for ns_bashrc_d_script in "${HOME}/.bashrc.d"/*.sh; do
-        if [[ -r ${ns_bashrc_d_script} ]]; then
-            source "${ns_bashrc_d_script}"
-        fi
-    done
-    unset ns_bashrc_d_script
-fi
+for ns_bashrc_d_script in "${HOME}/.integration/bashrc.d"/*.sh; do
+    if [[ -r ${ns_bashrc_d_script} ]]; then
+        source "${ns_bashrc_d_script}"
+    fi
+done
+unset ns_bashrc_d_script
 
 if [[ $- != *i* ]]; then
     # shell is non-interactive; bail

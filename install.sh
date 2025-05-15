@@ -83,8 +83,8 @@ if [[ ${old_source_line} != "${source_line}" ]]; then
     printf "%s\n" "${lines[@]}" > "${bashrc_file}"
 fi
 
-# create a directory for other scripts to drop in bashrc supplements
-mkdir -p "${HOME}/.bashrc.d"
+# create user supplemental directories
+mkdir -p "${HOME}/.integration"/{bashrc.d,path.d}
 
 if [[ -n ${replace_bash_profile} ]]; then
     cp -f "${script_dir}/bash_profile" "${HOME}/.bash_profile"
