@@ -3,7 +3,7 @@
 ###############
 # ENVIRONMENT #
 ###############
-NS_BASH_PATH="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
+ns_bash_path=$(dirname "$(realpath "${BASH_SOURCE[0]}")")
 ns_add_path_if_missing() {
     local check_exists=0
     if [[ ${1} == "-e" ]]; then
@@ -22,7 +22,7 @@ ns_add_path_if_missing() {
     done
     echo "${full_path%:}"
 }
-PATH="$(ns_add_path_if_missing \
+PATH=$(ns_add_path_if_missing \
     "$(ns_add_path_if_missing -e "${PATH}" \
         '/opt/bin' '/opt/sbin' \
         '/bin' '/sbin' \
@@ -30,16 +30,25 @@ PATH="$(ns_add_path_if_missing \
         '/opt/local/bin' '/opt/local/sbin' \
         '/usr/local/bin' '/usr/local/sbin' \
     )" \
-    "${NS_BASH_PATH}/bin" \
+    "${ns_bash_path}/bin" \
     "${HOME}/.local/bin" \
     "${HOME}/bin" \
-)"
+)
 export PATH
-LD_LIBRARY_PATH="$(ns_add_path_if_missing "${LD_LIBRARY_PATH}" \
+LD_LIBRARY_PATH=$(ns_add_path_if_missing "${LD_LIBRARY_PATH}" \
         "${HOME}/lib"
-)"
+)
 export LD_LIBRARY_PATH
-unset ns_add_path_if_missing NS_BASH_PATH
+unset ns_add_path_if_missing ns_bash_path
+
+if [[ -d "${HOME}/.bashrc.d" ]]; then
+    for ns_bashrc_d_script in "${HOME}/.bashrc.d"/*.sh; do
+        if [[ -r ${ns_bashrc_d_script} ]]; then
+            source "${ns_bashrc_d_script}"
+        fi
+    done
+    unset ns_bashrc_d_script
+fi
 
 if [[ $- != *i* ]]; then
     # shell is non-interactive; bail
