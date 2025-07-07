@@ -10,6 +10,10 @@ if command -v pacman &>/dev/null; then
                 'systems with the AUR helper "yay".'
             exit 1
         fi
+        news_since_last_update=$(yay -Pw)
+        if [[ -n ${news_since_last_update} ]]; then
+            less <<< "${news_since_last_update}"
+        fi
         yay --noconfirm --sudoloop -Su
     fi
     readarray -t orphans < <(pacman -Qtdq || true)
