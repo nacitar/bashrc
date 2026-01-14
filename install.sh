@@ -26,6 +26,7 @@ while [ ${#} -gt 0 ]; do
     case "${1}" in
         -h|--help) show_usage; exit 0 ;;
         --replace-bash-profile) replace_bash_profile=1 ;;
+        --python-aliases) python_aliases=1 ;;
         --?*) error -u "unsupported long option: ${1}" ;;
         -??*) set -- "-${1:1:1}" "-${1:2}" "${@:2}"; continue ;;
         -?) error -u "unsupported short option: ${1}" ;;
@@ -34,8 +35,9 @@ while [ ${#} -gt 0 ]; do
     shift
 done
 
-script_dir="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
-source_path="${script_dir}/bashrc"
+script_dir=$(dirname "$(realpath "${BASH_SOURCE[0]}")")
+addons_dir=${script_dir}/addons
+source_path=${script_dir}/bashrc
 if [[ ${source_path} == "${HOME}"* ]]; then
     source_path="\${HOME}${source_path:${#HOME}}"
 fi
@@ -84,8 +86,33 @@ if [[ ${old_source_line} != "${source_line}" ]]; then
 fi
 
 # create user supplemental directories
-mkdir -p "${HOME}/.integration"/{bashrc.d,path.d}
+integration_dir=${HOME}/.integration
+bashrc_d=${integration_dir}/bashrc.d
+path_d=${integration_dir}/path.d
+mkdir -p "${integration_dir}" "${bashrc_d}" "${path_d}"
 
 if [[ -n ${replace_bash_profile} ]]; then
     cp -f "${script_dir}/bash_profile" "${HOME}/.bash_profile"
+fi
+
+symlink_overwrite() {
+    if (( ${#} != 2 )); then
+        error "usage: ${FUNCNAME[0]} <source-dir-or-file> <dest-symlink>"
+    fi
+    local source=${1}
+    local destination=${2}
+    if [[ ! -e ${source} ]]; then
+        >&2 echo "WARNING: skipping missing path: ${source}"
+        return
+    fi
+    if [[ -d ${destination} ]]; then
+        rm -rf "${destination}"
+    fi
+    ln -sf "${source}" "${destination}"
+}
+
+if [[ -n ${python_aliases} ]]; then
+    symlink_overwrite \
+        "${addons_dir}/python-aliases.sh" \
+        "${bashrc_d}/python-aliases.sh"
 fi

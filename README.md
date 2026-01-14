@@ -27,6 +27,10 @@ A simple bashrc, with various features.
   behavior.  If you're someone who uses this feature, simply add set -H to
   your `~/.bashrc` after installation to override the setting.
 
+Optional addons are also provided.
+- Passing '--python-aliases' adds a script with my personal python development
+  aliases into the `~/.integration/bashrc.d` directory.
+
 
 installation
 ============
@@ -48,7 +52,7 @@ An example installation into "${HOME}/.bash":
 
 ```
 git clone https://github.com/nacitar/bashrc.git "${HOME}/.bash"
-"${HOME}/.bash/install.sh" --replace-bash-profile
+"${HOME}/.bash/install.sh" --replace-bash-profile --python-aliases
 ```
 
 
