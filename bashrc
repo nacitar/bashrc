@@ -245,6 +245,25 @@ ns_benchmark() {
     elapsed=$(( (end_time - start_time) / 1000000 ))
     echo "${function_name}: ${elapsed}ms"
 }
+ns_run_ancestor() {
+    local script=${1:-}
+    if [[ -z ${script:-} ]]; then
+        >&2 echo "usage: ns_run_ancestor <script-name>"
+        return 1
+    fi
+    shift
+    local directory=${PWD}
+    while [[ -n ${directory} ]]; do
+        local script_path=${directory}/${script}
+        if [[ -x ${script_path} ]]; then
+            "${script_path}" "${@}"
+            return
+        fi
+        directory=${directory%/*}
+    done
+    >&2 echo "Could not find script in CWD or any parent: ${script}"
+    return 1
+}
 
 #################
 # CONFIGURATION #
