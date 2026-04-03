@@ -245,25 +245,48 @@ ns_benchmark() {
     elapsed=$(( (end_time - start_time) / 1000000 ))
     echo "${function_name}: ${elapsed}ms"
 }
+ns_find_ancestor() {
+    local plus_x usage name
+    while ((${#})); do
+        case "${1}" in
+            -x) plus_x=1 ;;
+            --help) usage=0; break ;;
+            --) shift; break ;;
+            -?*) usage=2; break ;;
+            *) name=${1}; shift; break ;;
+        esac
+        shift
+    done
+    [[ -z ${usage-} && ( -z ${name-} || ${#} -ne 0 ) ]] && usage=2
+    if [[ -n ${usage-} ]]; then
+        >&2 echo "Usage: ns_find_ancestor [-x] <name-or-relative-path>"
+        return "${usage}"
+    fi
+    local directory=${PWD%/}  # "" means root (/) in this case
+    while :; do
+        local file_path=${directory}/${name}
+        if [[ ( -n ${plus_x-} && -x ${file_path} ) \
+           || ( -z ${plus_x-} && -e ${file_path} ) ]]; then
+            echo "${file_path}"
+            return 0
+        fi
+        [[ -z ${directory} ]] && break
+        directory=${directory%/*}
+    done
+    >&2 echo "ERROR: No ${plus_x:++x }file in CWD or ancestors named: ${name}"
+    return 1
+}
 ns_run_ancestor() {
-    local script=${1:-}
-    if [[ -z ${script:-} ]]; then
-        >&2 echo "usage: ns_run_ancestor <script-name>"
+    local name=${1-} script_path
+    if [[ -z ${name-} ]]; then
+        >&2 echo "Usage: ns_run_ancestor <name-or-relative-path> [<args...>]"
         return 1
     fi
     shift
-    local directory=${PWD}
-    while [[ -n ${directory} ]]; do
-        local script_path=${directory}/${script}
-        if [[ -x ${script_path} ]]; then
-            "${script_path}" "${@}"
-            return
-        fi
-        directory=${directory%/*}
-    done
-    >&2 echo "Could not find script in CWD or any parent: ${script}"
-    return 1
+    script_path=$(ns_find_ancestor -x "${name}") || return 1
+    "${script_path}" "${@}"
 }
+
 
 #################
 # CONFIGURATION #
