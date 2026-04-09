@@ -213,10 +213,9 @@ ns_set_bash_prompt() {
         >&2 echo "WARNING: tput is not in PATH, cannot colorize bash prompt!"
         PS1='[\u@\h \w]\$ '
     fi
-    # because "uv run" and "poetry run" only set VIRTUAL_ENV
-    # set the prompt if it's missing
-    #
     if [[ -z ${VIRTUAL_ENV_DISABLE_PROMPT} ]]; then
+        # because "uv run" and "poetry run" only set VIRTUAL_ENV
+        # set the prompt if it's missing
         if [[ -n ${VIRTUAL_ENV} && -z ${VIRTUAL_ENV_PROMPT} ]]; then
             if [[ -r ${VIRTUAL_ENV}/pyvenv.cfg ]]; then
                 while IFS= read -r line; do  # line by line
@@ -235,7 +234,7 @@ ns_set_bash_prompt() {
                 export VIRTUAL_ENV_PROMPT=${venv_path##*/}
             fi
         fi
-        # keep re-sourcing .venv/bin/activate from prepending another prompt
+        # so re-sourcing .venv/bin/activate doesn't prepend another prompt
         export _OLD_VIRTUAL_PS1=${PS1}
         PS1="${VIRTUAL_ENV_PROMPT:+(${VIRTUAL_ENV_PROMPT}) }${PS1}"
     fi
