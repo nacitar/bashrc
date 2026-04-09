@@ -215,25 +215,30 @@ ns_set_bash_prompt() {
     fi
     # because "uv run" and "poetry run" only set VIRTUAL_ENV
     # set the prompt if it's missing
-    if [[ -n ${VIRTUAL_ENV} && -z ${VIRTUAL_ENV_PROMPT} ]]; then
-        if [[ -r ${VIRTUAL_ENV}/pyvenv.cfg ]]; then
-            while IFS= read -r line; do  # line by line
-                if [[ ${line} == "prompt = "* ]]; then
-                    export VIRTUAL_ENV_PROMPT="${line#prompt = }"
-                    break
-                fi
-            done < "${VIRTUAL_ENV}/pyvenv.cfg"
+    #
+    if [[ -z ${VIRTUAL_ENV_DISABLE_PROMPT-} ]]; then
+        if [[ -n ${VIRTUAL_ENV} && -z ${VIRTUAL_ENV_PROMPT} ]]; then
+            if [[ -r ${VIRTUAL_ENV}/pyvenv.cfg ]]; then
+                while IFS= read -r line; do  # line by line
+                    if [[ ${line} == "prompt = "* ]]; then
+                        export VIRTUAL_ENV_PROMPT="${line#prompt = }"
+                        break
+                    fi
+                done < "${VIRTUAL_ENV}/pyvenv.cfg"
+            fi
+            if [[ -z ${VIRTUAL_ENV_PROMPT} ]]; then
+                local venv_path="${VIRTUAL_ENV%/}"
+                local venv_name="${venv_path##*/}"
+                case "${venv_name}" in
+                    .venv|venv|env) venv_path=${venv_path%/*} ;;  # strip it off
+                esac
+                export VIRTUAL_ENV_PROMPT=${venv_path##*/}
+            fi
         fi
-        if [[ -z ${VIRTUAL_ENV_PROMPT} ]]; then
-            local venv_path="${VIRTUAL_ENV%/}"
-            local venv_name="${venv_path##*/}"
-            case "${venv_name}" in
-                .venv|venv|env) venv_path=${venv_path%/*} ;;  # strip it off
-            esac
-            export VIRTUAL_ENV_PROMPT=${venv_path##*/}
-        fi
+        # keep re-sourcing .venv/bin/activate from prepending another prompt
+        export _OLD_VIRTUAL_PS1=${PS1} 
+        PS1="${VIRTUAL_ENV_PROMPT:+(${VIRTUAL_ENV_PROMPT}) }${PS1}"
     fi
-    PS1="${VIRTUAL_ENV_PROMPT:+(${VIRTUAL_ENV_PROMPT}) }${PS1}"  # venv prefix
     # PROMPT_COMMAND is an array; simply assigning a string only sets [0]
     # shellcheck disable=2016
     PROMPT_COMMAND=("printf '\e]0;%s\a' \"\$($(printf %s \
