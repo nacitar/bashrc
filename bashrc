@@ -216,7 +216,7 @@ ns_set_bash_prompt() {
     # because "uv run" and "poetry run" only set VIRTUAL_ENV
     # set the prompt if it's missing
     #
-    if [[ -z ${VIRTUAL_ENV_DISABLE_PROMPT-} ]]; then
+    if [[ -z ${VIRTUAL_ENV_DISABLE_PROMPT} ]]; then
         if [[ -n ${VIRTUAL_ENV} && -z ${VIRTUAL_ENV_PROMPT} ]]; then
             if [[ -r ${VIRTUAL_ENV}/pyvenv.cfg ]]; then
                 while IFS= read -r line; do  # line by line
