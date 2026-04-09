@@ -236,7 +236,7 @@ ns_set_bash_prompt() {
             fi
         fi
         # keep re-sourcing .venv/bin/activate from prepending another prompt
-        export _OLD_VIRTUAL_PS1=${PS1} 
+        export _OLD_VIRTUAL_PS1=${PS1}
         PS1="${VIRTUAL_ENV_PROMPT:+(${VIRTUAL_ENV_PROMPT}) }${PS1}"
     fi
     # PROMPT_COMMAND is an array; simply assigning a string only sets [0]
