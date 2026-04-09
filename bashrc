@@ -240,6 +240,7 @@ ns_set_bash_prompt() {
     fi
     # PROMPT_COMMAND is an array; simply assigning a string only sets [0]
     # shellcheck disable=2016
+    unset PROMPT_COMMAND
     PROMPT_COMMAND=("printf '\e]0;%s\a' \"\$($(printf %s \
         'if ns_is_local_machine;then' \
         ' if ns_is_gui_session_owner;then header="";else header="\u";fi;' \
@@ -249,7 +250,7 @@ ns_set_bash_prompt() {
         'echo -n "${header}${cwd}"' \
     ))\"")
     # osc99 for wsl + windows terminal so new tabs open in same directory
-    if command -v wslpath &>/dev/null; then
+    if [[ -n ${WSL_DISTRO_NAME} ]]; then
         # shellcheck disable=2016
         PROMPT_COMMAND+=('printf "\e]9;9;%s\e\\" "${PWD}"')
     fi
