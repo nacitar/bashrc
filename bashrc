@@ -45,6 +45,7 @@ unset ns_add_path_if_missing ns_bash_path
 
 for ns_bashrc_d_script in "${HOME}/.integration/bashrc.d"/*.sh; do
     if [[ -r ${ns_bashrc_d_script} ]]; then
+        # shellcheck disable=1090
         source "${ns_bashrc_d_script}"
     fi
 done
@@ -238,9 +239,9 @@ ns_set_bash_prompt() {
         export _OLD_VIRTUAL_PS1=${PS1}
         PS1="${VIRTUAL_ENV_PROMPT:+(${VIRTUAL_ENV_PROMPT}) }${PS1}"
     fi
+    unset PROMPT_COMMAND
     # PROMPT_COMMAND is an array; simply assigning a string only sets [0]
     # shellcheck disable=2016
-    unset PROMPT_COMMAND
     PROMPT_COMMAND=("printf '\e]0;%s\a' \"\$($(printf %s \
         'if ns_is_local_machine;then' \
         ' if ns_is_gui_session_owner;then header="";else header="\u";fi;' \
@@ -395,7 +396,7 @@ alias n='yes "" 2>/dev/null | head -n"${LINES:-100}"'
 
 # Efficiency
 # shellcheck disable=2139
-alias make="make -j$(($(nproc)+1))"
+alias make="make -j$(($(nproc 2>/dev/null || echo 1)+1))"
 
 if [[ $TERM == xterm-kitty ]]; then
     alias icat="kitten icat"
