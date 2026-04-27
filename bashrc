@@ -221,7 +221,15 @@ ns_set_bash_prompt() {
             if [[ -r ${VIRTUAL_ENV}/pyvenv.cfg ]]; then
                 while IFS= read -r line; do  # line by line
                     if [[ ${line} == "prompt = "* ]]; then
-                        export VIRTUAL_ENV_PROMPT=${line#prompt = }
+                        local prompt=${line#prompt = }
+                        local first_char=${prompt:0:1}
+                        if [[ ${#prompt} -gt 1 \
+                            && ${first_char} == [\'\"] \
+                            && ${prompt: -1} == "${first_char}" \
+                        ]]; then
+                            prompt="${prompt:1:-1}"  # remove matching quotes
+                        fi
+                        export VIRTUAL_ENV_PROMPT=${prompt}
                         break
                     fi
                 done < "${VIRTUAL_ENV}/pyvenv.cfg"
