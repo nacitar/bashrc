@@ -221,14 +221,14 @@ ns_set_bash_prompt() {
             if [[ -r ${VIRTUAL_ENV}/pyvenv.cfg ]]; then
                 while IFS= read -r line; do  # line by line
                     if [[ ${line} == "prompt = "* ]]; then
-                        export VIRTUAL_ENV_PROMPT="${line#prompt = }"
+                        export VIRTUAL_ENV_PROMPT=${line#prompt = }
                         break
                     fi
                 done < "${VIRTUAL_ENV}/pyvenv.cfg"
             fi
             if [[ -z ${VIRTUAL_ENV_PROMPT} ]]; then
-                local venv_path="${VIRTUAL_ENV%/}"
-                local venv_name="${venv_path##*/}"
+                local venv_path=${VIRTUAL_ENV%/}
+                local venv_name=${venv_path##*/}
                 case "${venv_name}" in
                     .venv|venv|env) venv_path=${venv_path%/*} ;;  # strip it off
                 esac
@@ -237,7 +237,7 @@ ns_set_bash_prompt() {
         fi
         # so re-sourcing .venv/bin/activate doesn't prepend another prompt
         export _OLD_VIRTUAL_PS1=${PS1}
-        PS1="${VIRTUAL_ENV_PROMPT:+(${VIRTUAL_ENV_PROMPT}) }${PS1}"
+        PS1=${VIRTUAL_ENV_PROMPT:+(${VIRTUAL_ENV_PROMPT}) }${PS1}
     fi
     unset PROMPT_COMMAND
     # PROMPT_COMMAND is an array; simply assigning a string only sets [0]
