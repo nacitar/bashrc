@@ -238,7 +238,7 @@ ns_set_bash_prompt() {
                 local venv_path=${VIRTUAL_ENV%/}
                 local venv_name=${venv_path##*/}
                 case "${venv_name}" in
-                    .venv|venv|env) venv_path=${venv_path%/*} ;;  # strip it off
+                    .venv|venv|env) venv_path=${venv_path%/*} ;;
                 esac
                 export VIRTUAL_ENV_PROMPT=${venv_path##*/}
             fi
