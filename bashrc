@@ -23,19 +23,21 @@ ns_add_path_if_missing() {
     done
     echo "${full_path%:}"
 }
-PATH=$(ns_add_path_if_missing \
-    "$(ns_add_path_if_missing -e "${PATH}" \
-        '/opt/bin' '/opt/sbin' \
-        '/bin' '/sbin' \
-        '/usr/bin' '/usr/sbin' \
-        '/opt/local/bin' '/opt/local/sbin' \
-        '/usr/local/bin' '/usr/local/sbin' \
-        "${HOME}/.integration/path.d"/*/ \
-    )" \
-    "${ns_bash_path}/bin" \
-    "${HOME}/.local/bin" \
-    "${HOME}/bin" \
-)
+PATH="$(
+    shopt -s nullglob
+    ns_add_path_if_missing \
+        "$(ns_add_path_if_missing -e "${PATH}" \
+            '/opt/bin' '/opt/sbin' \
+            '/bin' '/sbin' \
+            '/usr/bin' '/usr/sbin' \
+            '/opt/local/bin' '/opt/local/sbin' \
+            '/usr/local/bin' '/usr/local/sbin' \
+            "${HOME}/.integration/path.d"/*/ \
+        )" \
+        "${ns_bash_path}/bin" \
+        "${HOME}/.local/bin" \
+        "${HOME}/bin"
+)"
 export PATH
 LD_LIBRARY_PATH=$(ns_add_path_if_missing "${LD_LIBRARY_PATH}" \
         "${HOME}/lib"
