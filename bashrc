@@ -14,7 +14,7 @@ ns_add_path_if_missing() {
     shift
     while (($#)); do
         local entry=${1%/}
-        if ((!check_exists)) || [[ -e ${entry} ]]; then
+        if [[ -n ${entry} && ( ${check_exists} -eq 0 || -e ${entry} ) ]]; then
             if [[ ! ${full_path} =~ (^|:)"${entry}"/?(:|$) ]]; then
                 full_path=${entry}:${full_path}
             fi

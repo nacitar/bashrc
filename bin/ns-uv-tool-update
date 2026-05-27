@@ -1,0 +1,31 @@
+#!/bin/bash
+set -euo pipefail
+
+if ! command -v uv >/dev/null 2>&1; then
+    >&2 echo "WARNING: uv isn't installed; nothing to do."
+    exit 0
+fi
+
+# Avoid leaking an active venv into tool operations.
+if [[ -n ${VIRTUAL_ENV:-} ]]; then
+    new_path=":${PATH}:"
+    new_path=${new_path//:${VIRTUAL_ENV}\/bin:/:}
+    new_path=${new_path#:}
+    PATH=${new_path%:}
+    unset VIRTUAL_ENV
+fi
+
+# Normal path: upgrade all installed tools.
+if uv tool upgrade --all; then
+    exit 0
+fi
+
+# Fallback for cases where a tool env references a removed/changed interpreter.
+if command -v python3 >/dev/null 2>&1; then
+    >&2 echo "uv upgrade failed; retrying with python3 and reinstall."
+    uv tool upgrade --all --python python3 --reinstall
+    exit 0
+fi
+
+>&2 echo "ERROR: uv upgrade failed and python3 is unavailable for recovery."
+exit 1

@@ -21,7 +21,7 @@ if command -v pipx &>/dev/null; then
             fi
         fi
     done
-    pipx upgrade-all
+    pipx upgrade-all --force
 else
     >&2 echo "WARNING: pipx isn't installed; nothing to do."
 fi

@@ -63,3 +63,4 @@ else
 fi
 
 "${script_dir}"/ns-pipx-update
+"${script_dir}"/ns-uv-tool-update
