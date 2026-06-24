@@ -2,6 +2,9 @@
 set -eu
 script_dir="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
 
+# Avoid leaking an active venv into tool operations.
+unset VIRTUAL_ENV
+
 if command -v pacman &>/dev/null; then
     sudo pacman -Sy --noconfirm --needed archlinux-keyring
     if command -v yay &>/dev/null; then
@@ -12,7 +15,8 @@ if command -v pacman &>/dev/null; then
         fi
         news_since_last_update=$(yay -Pw)
         if [[ -n ${news_since_last_update} ]]; then
-            less <<< "${news_since_last_update}"
+            heading='ArchLinux news since last update (press q to continue)'
+            less -R <<< "=== ${heading} ==="$'\n\n'"${news_since_last_update}"
         fi
         yay --noconfirm --sudoloop -Su
     fi
@@ -62,5 +66,4 @@ else
     exit 1
 fi
 
-"${script_dir}"/ns-pipx-update
 "${script_dir}"/ns-uv-tool-update
