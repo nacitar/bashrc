@@ -22,6 +22,7 @@ error() {
     exit 1
 }
 replace_bash_profile=''
+python_aliases=''
 while [ ${#} -gt 0 ]; do
     case "${1}" in
         -h|--help) show_usage; exit 0 ;;
