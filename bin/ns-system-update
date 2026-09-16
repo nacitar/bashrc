@@ -67,3 +67,4 @@ else
 fi
 
 "${script_dir}"/ns-uv-tool-update
+"${script_dir}"/ns-npm-tool-update

@@ -1,0 +1,113 @@
+#!/bin/bash
+set -eu
+
+# Explicit even though bashrc already exports NPM_CONFIG_PREFIX pointing
+# global installs at a per-user directory; this keeps the script correct
+# regardless of whether that's in effect (e.g. run outside an interactive
+# bash). --prefix below still wins over the env var either way, same as it
+# would for any other npm command.
+npm_prefix=${NPM_CONFIG_PREFIX:-${HOME}/.local}
+
+# Global installs record no version intent of their own -- `npm ls -g --json`
+# reports the requested range for every package as "*" whether you asked for
+# `@latest` or `@1.2.3`, so a deliberate pin can't be recovered from npm's
+# own state. This file is the one piece of state we do keep: exact pins
+# (`pkg@1.2.3` per line, blank lines and '#' comments ignored) that override
+# the default `@latest` for packages already installed. It does not itself
+# add packages -- `npm install -g <pkg>` still does that, same as always.
+pins_file=${XDG_CONFIG_HOME:-${HOME}/.config}/npm-tool-pins
+
+echo "npm: upgrading packages..."
+if ! command -v npm >/dev/null 2>&1; then
+    >&2 echo "WARNING: npm isn't installed; nothing to do."
+    exit 0
+fi
+
+# Nothing to introspect if the prefix has never had a global install; npm
+# itself errors on a missing directory rather than reporting an empty tree.
+node_modules_dir=${npm_prefix}/lib/node_modules
+if [[ ! -d ${node_modules_dir} ]]; then
+    echo "npm: nothing installed under ${npm_prefix}; nothing to do."
+    exit 0
+fi
+
+# The installed set (top-level only) is itself the list of tools to keep
+# current -- `npm install -g <pkg>` is how you add to it. No separate
+# tracking file for that part, mirroring how `uv tool upgrade --all` works
+# off uv's own tool directory. Also capture each installed version, needed
+# below to tell whether a pinned package has actually drifted.
+declare -A installed_version=()
+packages=()
+while IFS=$'\t' read -r name version; do
+    [[ -z ${name} ]] && continue
+    packages+=("${name}")
+    installed_version[${name}]=${version}
+done < <(
+    npm ls -g --depth=0 --json --prefix "${npm_prefix}" 2>/dev/null \
+        | node -p 'Object.entries(
+              JSON.parse(require("fs").readFileSync(0, "utf8")).dependencies
+                  || {}
+          ).map(([name, info]) => name + "\t" + (info.version || ""))
+              .join("\n")' 2>/dev/null
+)
+
+if (( ${#packages[@]} == 0 )); then
+    echo "npm: no global packages found under ${npm_prefix}; nothing to do."
+    exit 0
+fi
+
+# Load pins: "pkg@1.2.3" (or "@scope/pkg@1.2.3") -> keyed by bare package
+# name so it can be looked up per installed package below. A leading '@'
+# marks a scoped name, not a version, so it's skipped when splitting the two.
+declare -A pins=()
+if [[ -r ${pins_file} ]]; then
+    while IFS= read -r line || [[ -n ${line} ]]; do
+        line=${line#"${line%%[![:space:]]*}"}
+        line=${line%"${line##*[![:space:]]}"}
+        [[ -z ${line} || ${line} == '#'* ]] && continue
+        scope='' rest=${line}
+        [[ ${line} == @* ]] && scope='@' && rest=${line:1}
+        pins["${scope}${rest%%@*}"]=${line}
+    done < "${pins_file}"
+fi
+
+# `npm install -g <pkg>@latest` (and even npm's own `npm update -g`) rewrite
+# every package on every run regardless of whether anything actually
+# changed -- global installs have no lockfile for npm to diff against, so
+# there's no cheap "already satisfied" check built in. `npm outdated -g`
+# doesn't have that blind spot (it compares against the registry itself),
+# so it decides what's worth touching instead of leaving that to npm's
+# always-rewrite install path.
+declare -A outdated=()
+while IFS= read -r name; do
+    [[ -z ${name} ]] && continue
+    outdated[${name}]=1
+done < <(
+    npm outdated -g --json --prefix "${npm_prefix}" 2>/dev/null \
+        | node -p 'Object.keys(
+              JSON.parse(require("fs").readFileSync(0, "utf8")) || {}
+          ).join("\n")' 2>/dev/null
+)
+
+targets=()
+for package in "${packages[@]}"; do
+    if [[ -v pins[${package}] ]]; then
+        pinned_version=${pins[${package}]##*@}
+        [[ ${installed_version[${package}]} == "${pinned_version}" ]] && continue
+        targets+=("${pins[${package}]}")
+    elif [[ -v outdated[${package}] ]]; then
+        targets+=("${package}@latest")
+    fi
+done
+
+if (( ${#targets[@]} == 0 )); then
+    echo "npm: everything already up to date."
+    exit 0
+fi
+
+if npm install -g --prefix "${npm_prefix}" "${targets[@]}"; then
+    exit 0
+fi
+
+>&2 echo "ERROR: npm upgrade failed."
+exit 1

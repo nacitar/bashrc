@@ -6,20 +6,16 @@
 ns_bash_path=$(dirname "$(realpath "${BASH_SOURCE[0]}")")
 ns_add_path_if_missing() {
     local check_exists=0
-    if [[ ${1} == "-e" ]]; then
-        check_exists=1
-        shift
-    fi
-    local full_path=${1}
+    [[ ${1} == -e ]] && { check_exists=1; shift; }
+    local full_path=${1//\/:/:} entry
+    full_path=${full_path%/}
     shift
-    while (($#)); do
-        local entry=${1%/}
-        if [[ -n ${entry} && ( ${check_exists} -eq 0 || -e ${entry} ) ]]; then
-            if [[ ! ${full_path} =~ (^|:)"${entry}"/?(:|$) ]]; then
-                full_path=${entry}:${full_path}
-            fi
+    for entry; do
+        entry=${entry%/}
+        if [[ -n ${entry} && ( ${check_exists} -eq 0 || -e ${entry} ) \
+              && ":${full_path}:" != *":${entry}:"* ]]; then
+            full_path=${entry}:${full_path}
         fi
-        shift
     done
     echo "${full_path%:}"
 }
@@ -43,6 +39,12 @@ LD_LIBRARY_PATH=$(ns_add_path_if_missing "${LD_LIBRARY_PATH}" \
         "${HOME}/lib"
 )
 export LD_LIBRARY_PATH
+# npm install -g otherwise defaults to wherever node is installed (often
+# root-owned); point it at the per-user location instead (~/.local/bin,
+# ~/.local/lib -- the UAPI Group's Linux File System Hierarchy spec's
+# documented per-user equivalents of /usr/bin, /usr/lib), matching where
+# ns-npm-tool-update already installs to explicitly.
+export NPM_CONFIG_PREFIX=${HOME}/.local
 unset ns_add_path_if_missing ns_bash_path
 
 for ns_bashrc_d_script in "${HOME}/.integration/bashrc.d"/*.sh; do
@@ -99,14 +101,6 @@ ns_select_default_ssh_id() {
       ln -s "${key_id}.pub" "${default_key}.pub"
     fi
 }
-ns_is_integral() {
-    while ((${#})); do
-        # NOTE: must use [ ] instead of [[ ]] for this check to work
-        [ "${1}" -eq "${1}" ] 2>/dev/null || return 1
-        shift
-    done
-    return 0
-}
 ns_is_local_machine() {
     [[ -z ${SSH_CLIENT} && -z ${SSH_TTY} ]]
 }
@@ -130,11 +124,6 @@ ns_abbreviate_dir() {  # NOTE: simple argument handling for speed in prompt
     if [[ ${dir} == "${HOME}"* ]]; then
         dir="~${dir:${#HOME}}"
     fi
-    # NOTE: could remove IFS=/, and use:
-    #   local length=${#dir} parts
-    #   readarray -d '/' -t parts <<< "${dir}"
-    # ... but it is slower and functions identically.
-    #
     # shellcheck disable=2206
     local length=${#dir} parts=(${dir})
     local i=-1 end=$((${#parts[@]}-keep))
@@ -160,14 +149,13 @@ ns_set_bash_prompt() {
         shift
     done
     if [[ -n "${target_title_path_length}" ]]; then
-        if ! ns_is_integral "${target_title_path_length}"; then
-            >&2 echo "ERROR: target_title_path_length must be an integer."
-            return 1
-        fi
-        if ! ns_is_integral "${keep_path_levels}"; then
-            >&2 echo "ERROR: keep_path_levels must be an integer."
-            return 1
-        fi
+        local int_var
+        for int_var in target_title_path_length keep_path_levels; do
+            [ "${!int_var}" -eq "${!int_var}" ] 2>/dev/null || {
+                >&2 echo "ERROR: ${int_var} must be an integer."
+                return 1
+            }
+        done
         # shellcheck disable=2016
         cwd_definition="$(printf %s \
             'cwd="\w";' \

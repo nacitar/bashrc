@@ -21,6 +21,22 @@ A simple bashrc, with various features.
   - ns\_system\_update: updates the system.
     - prompts for a sudo password.
     - interactively merges updated configuration files at the end (if needed).
+    - also runs `ns-uv-tool-update` and `ns-npm-tool-update`, which upgrade
+      per-user tools installed via `uv tool` and `npm install -g`
+      respectively.  Both are no-ops if their tool isn't installed.
+      `ns-npm-tool-update` has no separate list of its own to maintain: it
+      lists whatever is currently installed under `${HOME}/.local` (the
+      bashrc-exported `NPM_CONFIG_PREFIX`, which also makes plain
+      `npm install -g` per-user with no extra setup) and reinstalls each at
+      `@latest`, the same way `ns-uv-tool-update` works off uv's own tool
+      directory.  Add a new tool
+      once with `npm install -g <package>` and it's kept current from then
+      on.  To keep a package at a specific version instead, list it (e.g.
+      `is-odd@2.0.0`) in `${XDG_CONFIG_HOME:-~/.config}/npm-tool-pins`, one
+      per line, `#` comments and blank lines ignored -- npm records no
+      version intent of its own for global installs, so this is the only
+      way a pin survives the next upgrade.  It only overrides packages
+      already installed; it isn't itself an install list.
   - ns\_archlinux\_update\_with\_plex: updates the system with extra logic to
     restart plex-media-server if it was updated.  ArchLinux only.
 - sets +H to disable history expansion, for safety and to avoid unexpected
@@ -30,6 +46,14 @@ A simple bashrc, with various features.
 Optional addons are also provided.
 - Passing '--python-aliases' adds a script with my personal python development
   aliases into the `~/.integration/bashrc.d` directory.
+
+The bashrc itself exports `NPM_CONFIG_PREFIX=${HOME}/.local` (see
+ENVIRONMENT), so `npm install -g` is per-user by default with no extra setup
+-- global npm installs are otherwise scoped by wherever node itself is
+installed, which usually means root.  `~/.local/bin` and `~/.local/lib` are
+the per-user equivalents of `/usr/bin` and `/usr/lib` per the
+[Linux File System Hierarchy spec](https://uapi-group.org/specifications/specs/linux_file_system_hierarchy/),
+same as where uv already puts its own tool shims.
 
 
 installation
