@@ -5,66 +5,44 @@ script_dir="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
 # Avoid leaking an active venv into tool operations.
 unset VIRTUAL_ENV
 
-if command -v pacman &>/dev/null; then
-    sudo pacman -Sy --noconfirm --needed archlinux-keyring
-    if command -v yay &>/dev/null; then
-        if [ "$(id -u)" -eq 0 ]; then
-            >&2 echo "ERROR: ${0} must NOT be ran with root privileges on" \
-                'systems with the AUR helper "yay".'
-            exit 1
-        fi
-        news_since_last_update=$(yay -Pw)
-        if [[ -n ${news_since_last_update} ]]; then
-            heading='ArchLinux news since last update (press q to continue)'
-            less -R <<< "=== ${heading} ==="$'\n\n'"${news_since_last_update}"
-        fi
-        yay --noconfirm --sudoloop -Su
-    fi
-    readarray -t orphans < <(pacman -Qtdq || true)
-    if (( ${#orphans[@]} )); then
-        sudo pacman -Rns --noconfirm "${orphans[@]}"
-    fi
-    # NOTE: paccache is suggested to be setup as a pacman hook
-    # https://averagelinuxuser.com/clean-arch-linux/#1-clean-package-cache
-    if command -v pacdiff &>/dev/null; then
-        if [[ -z ${DIFFPROG} ]]; then
-            if command -v nvim &>/dev/null; then
-                DIFFPROG="nvim -d"
-            else
-                DIFFPROG="vim -d"
-            fi
-        fi
-        sudo -- /bin/bash -ce "DIFFPROG=$(printf %q "${DIFFPROG}") pacdiff"
-    else
-        >&2 echo "WARNING: pacman-contrib not installed; cannot run pacdiff!"
-    fi
-elif command -v apt-get &>/dev/null; then
-    sudo -- /bin/bash -ce '
-        apt-get update -y
-        apt-get dist-upgrade -y
-        '
-elif command -v dnf &>/dev/null; then
-    sudo dnf upgrade --refresh -y
-elif command -v yum &>/dev/null; then
-    sudo -- /bin/bash -ce '
-        yum clean all
-        yum update -y
-        '
-elif command -v apk &>/dev/null; then
-    sudo -- /bin/bash -ce '
-        apk update
-        apk upgrade
-        '
-elif command -v emerge &>/dev/null; then
-    sudo -- /bin/bash -ce '
-        emerge --sync
-        command -v eix-update &>/dev/null && eix-update
-        emerge -vDNu world
-        '
-else
-    >&2 echo "ERROR: couldn't identify package manager."
+if ! command -v pacman &>/dev/null; then
+    >&2 echo "ERROR: ${0} only supports ArchLinux."
     exit 1
+fi
+
+sudo pacman -Sy --noconfirm --needed archlinux-keyring
+if command -v yay &>/dev/null; then
+    if [ "$(id -u)" -eq 0 ]; then
+        >&2 echo "ERROR: ${0} must NOT be ran with root privileges on" \
+            'systems with the AUR helper "yay".'
+        exit 1
+    fi
+    news_since_last_update=$(yay -Pw)
+    if [[ -n ${news_since_last_update} ]]; then
+        heading='ArchLinux news since last update (press q to continue)'
+        less -R <<< "=== ${heading} ==="$'\n\n'"${news_since_last_update}"
+    fi
+    yay --noconfirm --sudoloop -Su
+fi
+readarray -t orphans < <(pacman -Qtdq || true)
+if (( ${#orphans[@]} )); then
+    sudo pacman -Rns --noconfirm "${orphans[@]}"
+fi
+# NOTE: paccache is suggested to be setup as a pacman hook
+# https://averagelinuxuser.com/clean-arch-linux/#1-clean-package-cache
+if command -v pacdiff &>/dev/null; then
+    if [[ -z ${DIFFPROG} ]]; then
+        if command -v nvim &>/dev/null; then
+            DIFFPROG="nvim -d"
+        else
+            DIFFPROG="vim -d"
+        fi
+    fi
+    sudo -- /bin/bash -ce "DIFFPROG=$(printf %q "${DIFFPROG}") pacdiff"
+else
+    >&2 echo "WARNING: pacman-contrib not installed; cannot run pacdiff!"
 fi
 
 "${script_dir}"/ns-uv-tool-update
 "${script_dir}"/ns-npm-tool-update
+"${script_dir}"/ns-custom-packages update

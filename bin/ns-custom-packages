@@ -1,0 +1,319 @@
+#!/bin/bash
+set -eu
+
+# Manages locally built packages: ones that exist in no repository, so a normal
+# system update never touches them.
+#
+#   ns-custom-packages [update [NAME...]]
+#   ns-custom-packages list
+#   ns-custom-packages add DIRECTORY [NAME]
+#   ns-custom-packages install NAME
+#   ns-custom-packages remove NAME
+#
+# The managed packages are listed in
+#   ${XDG_CONFIG_HOME:-~/.config}/ns-custom-packages/packages
+# one per line as `<directory> [package-name]`; `add` and `remove` edit it, and
+# it can be edited by hand too ('#' comments and blank lines are kept).
+#
+# Each directory holds a PKGBUILD and an update.sh that follows a small
+# contract: `update.sh --check` exits 10 when a rebuild is needed, and a bare
+# `update.sh` builds the package into that directory (never using sudo).
+# `update` runs those and installs what they built, so it belongs after the
+# system update, once the package databases are current.
+#
+# `update` only manages a package once it is installed. The first install is
+# `install`, which shows pacman's own questions (for instance, whether to
+# replace the official package this one stands in for).
+
+# Avoid leaking an active venv into builds.
+unset VIRTUAL_ENV
+
+config_dir=${XDG_CONFIG_HOME:-${HOME}/.config}/ns-custom-packages
+packages_file=${NS_CUSTOM_PACKAGES_FILE:-${config_dir}/packages}
+
+usage() {
+    sed -n '4,11p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+}
+
+die() {
+    >&2 echo "ERROR: $*"
+    exit 1
+}
+
+if ! command -v pacman >/dev/null 2>&1; then
+    die "${0} only supports ArchLinux."
+fi
+
+# ---------------------------------------------------------------- the list
+
+entry_dirs=()
+entry_names=()
+
+# Fills entry_dirs / entry_names from the packages file.
+load_entries() {
+    entry_dirs=()
+    entry_names=()
+    [[ -f ${packages_file} ]] || return 0
+    local dir name _
+    # Read on fd 3 so that commands run later can't consume the list.
+    while read -r dir name _ <&3; do
+        [[ -z ${dir} || ${dir} == '#'* ]] && continue
+        dir=${dir/#\~\//${HOME}/}
+        entry_dirs+=("${dir}")
+        entry_names+=("${name:-$(basename "${dir}")}")
+    done 3< "${packages_file}"
+}
+
+# Sets entry_index to the position of NAME; fails if it isn't managed.
+find_entry() {
+    local i
+    for i in "${!entry_names[@]}"; do
+        if [[ ${entry_names[i]} == "$1" ]]; then
+            entry_index=${i}
+            return 0
+        fi
+    done
+    return 1
+}
+
+# Replaces a leading $HOME with ~ for storing and showing paths.
+tilde() {
+    echo "${1/#"${HOME}"\//\~/}"
+}
+
+# ------------------------------------------------------------ package state
+
+# Prints the installed version of package NAME; fails if it isn't installed.
+installed_version() {
+    local line
+    line=$(pacman -Q "$1" 2>/dev/null) || return 1
+    echo "${line##* }"
+}
+
+# Prints the newest package file built in DIR for package NAME; fails if none.
+# ("${name}-[0-9]*" leaves out the "-debug" package.)
+newest_package() {
+    local newest
+    newest=$(ls -t "$1/$2"-[0-9]*.pkg.tar.* 2>/dev/null | head -n1 || true)
+    [[ -n ${newest} ]] || return 1
+    echo "${newest}"
+}
+
+package_file_version() {
+    pacman -Qip "$1" | awk '/^Version/ {print $3}'
+}
+
+# Runs DIR's update.sh --check and rebuilds if it asks for that.
+# Usage: build_if_needed DIR NAME
+build_if_needed() {
+    local status=0
+    "$1/update.sh" --check || status=$?
+    if (( status == 10 )); then
+        echo "$2: rebuilding..."
+        "$1/update.sh" || return 1
+    elif (( status != 0 )); then
+        >&2 echo "ERROR: $2: update check failed (exit ${status})."
+        return 1
+    fi
+}
+
+# ----------------------------------------------------------------- commands
+
+update_one() {
+    local dir=$1 name=$2 installed package built
+    if [[ ! -x ${dir}/update.sh ]]; then
+        >&2 echo "WARNING: ${name}: ${dir}/update.sh not found; skipping."
+        return 0
+    fi
+    if ! installed=$(installed_version "${name}"); then
+        echo "${name}: not installed; skipping (use: ns-custom-packages install ${name})."
+        return 0
+    fi
+    if ! build_if_needed "${dir}" "${name}"; then
+        >&2 echo "ERROR: ${name}: update failed; leaving ${installed} installed."
+        return 1
+    fi
+    # The newest build may also have been made earlier, by hand.
+    if ! package=$(newest_package "${dir}" "${name}"); then
+        echo "${name}: up to date (${installed})."
+        return 0
+    fi
+    built=$(package_file_version "${package}")
+    if [[ ${built} == "${installed}" ]]; then
+        echo "${name}: up to date (${installed})."
+        return 0
+    fi
+    echo "${name}: installing ${built} (was ${installed})..."
+    if ! sudo pacman -U --noconfirm "${package}"; then
+        >&2 echo "ERROR: ${name}: install failed."
+        return 1
+    fi
+}
+
+cmd_update() {
+    load_entries
+    echo "custom packages: checking..."
+    if (( ! ${#entry_names[@]} )); then
+        echo "custom packages: none managed (see: ns-custom-packages add); nothing to do."
+        return 0
+    fi
+    local wanted=("$@") failures=0 i name
+    for name in "${wanted[@]}"; do
+        find_entry "${name}" || die "${name} isn't a managed package."
+    done
+    for i in "${!entry_names[@]}"; do
+        name=${entry_names[i]}
+        if (( ${#wanted[@]} )) && [[ " ${wanted[*]} " != *" ${name} "* ]]; then
+            continue
+        fi
+        update_one "${entry_dirs[i]}" "${name}" || failures=$((failures + 1))
+    done
+    if (( failures )); then
+        die "${failures} custom package(s) failed to update."
+    fi
+}
+
+cmd_list() {
+    load_entries
+    if (( ! ${#entry_names[@]} )); then
+        echo "No custom packages are managed (add one with: ns-custom-packages add DIRECTORY)."
+        return 0
+    fi
+    printf '%-28s %-14s %-24s %s\n' NAME INSTALLED STATUS DIRECTORY
+    local i name dir installed status package built
+    for i in "${!entry_names[@]}"; do
+        name=${entry_names[i]}
+        dir=${entry_dirs[i]}
+        installed=-
+        status="not installed"
+        if [[ ! -x ${dir}/update.sh ]]; then
+            status="missing update.sh"
+        elif installed=$(installed_version "${name}"); then
+            local check=0
+            "${dir}/update.sh" --check >/dev/null 2>&1 || check=$?
+            if (( check == 10 )); then
+                status="rebuild needed"
+            elif (( check != 0 )); then
+                status="check failed"
+            elif package=$(newest_package "${dir}" "${name}") &&
+                built=$(package_file_version "${package}") &&
+                [[ ${built} != "${installed}" ]]; then
+                status="ready to install ${built}"
+            else
+                status="up to date"
+            fi
+        else
+            installed=-
+        fi
+        printf '%-28s %-14s %-24s %s\n' "${name}" "${installed}" "${status}" "$(tilde "${dir}")"
+    done
+}
+
+cmd_add() {
+    (( $# >= 1 && $# <= 2 )) || { usage >&2; exit 1; }
+    local dir name
+    dir=$(realpath -- "$1") || die "$1 doesn't exist."
+    [[ -d ${dir} ]] || die "${dir} isn't a directory."
+    [[ -f ${dir}/PKGBUILD ]] || die "${dir} has no PKGBUILD."
+    [[ -x ${dir}/update.sh ]] || die "${dir} needs an executable update.sh (see the header of $0)."
+    if (( $# == 2 )); then
+        name=$2
+    else
+        # the package name the PKGBUILD declares, else the directory's name
+        name=$(cd "${dir}" && source ./PKGBUILD >/dev/null 2>&1 && printf %s "${pkgname[0]}") || name=
+        name=${name:-$(basename "${dir}")}
+    fi
+    load_entries
+    local i
+    for i in "${!entry_names[@]}"; do
+        if [[ ${entry_names[i]} == "${name}" ]]; then
+            die "${name} is already managed (${entry_dirs[i]})."
+        fi
+        if [[ ${entry_dirs[i]} == "${dir}" ]]; then
+            die "${dir} is already managed as ${entry_names[i]}."
+        fi
+    done
+    mkdir -p "$(dirname "${packages_file}")"
+    # make sure the new entry starts on its own line
+    if [[ -s ${packages_file} && -n $(tail -c1 "${packages_file}") ]]; then
+        echo >> "${packages_file}"
+    fi
+    printf '%s %s\n' "$(tilde "${dir}")" "${name}" >> "${packages_file}"
+    echo "Added ${name} ($(tilde "${dir}"))."
+    if ! installed_version "${name}" >/dev/null; then
+        echo "It isn't installed yet. Build and install it with: ns-custom-packages install ${name}"
+    fi
+}
+
+cmd_install() {
+    (( $# == 1 )) || { usage >&2; exit 1; }
+    load_entries
+    find_entry "$1" || die "$1 isn't a managed package (add it first)."
+    local name=$1 dir=${entry_dirs[entry_index]} package
+    [[ -x ${dir}/update.sh ]] || die "${dir}/update.sh not found."
+    build_if_needed "${dir}" "${name}" || die "${name}: build failed."
+    if ! package=$(newest_package "${dir}" "${name}"); then
+        # up to date as far as update.sh can tell, but nothing has been built here yet
+        "${dir}/update.sh" || die "${name}: build failed."
+        package=$(newest_package "${dir}" "${name}") || die "${name}: no package was built in ${dir}."
+    fi
+    echo "${name}: installing $(package_file_version "${package}")..."
+    # no --noconfirm: pacman's questions (conflicts, for instance) are the point
+    sudo pacman -U "${package}"
+}
+
+# Drops NAME's line from the packages file, keeping everything else as it is.
+drop_entry() {
+    local tmp line dir name _
+    tmp=$(mktemp)
+    while IFS= read -r line <&3 || [[ -n ${line} ]]; do
+        dir= name=
+        read -r dir name _ <<< "${line}" || true
+        if [[ -n ${dir} && ${dir} != '#'* ]]; then
+            dir=${dir/#\~\//${HOME}/}
+            if [[ ${name:-$(basename "${dir}")} == "$1" ]]; then
+                continue
+            fi
+        fi
+        printf '%s\n' "${line}" >> "${tmp}"
+    done 3< "${packages_file}"
+    cat "${tmp}" > "${packages_file}"
+    rm -f "${tmp}"
+}
+
+cmd_remove() {
+    (( $# == 1 )) || { usage >&2; exit 1; }
+    load_entries
+    find_entry "$1" || die "$1 isn't a managed package."
+    local name=$1 version provided=() item
+    if version=$(installed_version "${name}"); then
+        # what it stands in for, so the way back can be shown afterwards
+        for item in $(LC_ALL=C pacman -Qi "${name}" | awk -F' *: *' '/^Provides/ {print $2}'); do
+            [[ ${item} == None ]] || provided+=("${item%%=*}")
+        done
+        echo "${name}: uninstalling ${version}..."
+        # no --noconfirm: pacman shows what it is about to remove
+        sudo pacman -Rns "${name}" || die "${name} was not uninstalled, so it is still managed."
+    fi
+    drop_entry "${name}"
+    echo "${name} is no longer managed."
+    for item in ${provided[@]+"${provided[@]}"}; do
+        if ! pacman -Q "${item}" >/dev/null 2>&1 && pacman -Si "${item}" >/dev/null 2>&1; then
+            echo "The repository package ${item} is not installed; to get it back: sudo pacman -S ${item}"
+        fi
+    done
+}
+
+# --------------------------------------------------------------------- main
+
+command=${1:-update}
+(( $# )) && shift
+case ${command} in
+    update) cmd_update "$@" ;;
+    list) cmd_list "$@" ;;
+    add) cmd_add "$@" ;;
+    install) cmd_install "$@" ;;
+    remove) cmd_remove "$@" ;;
+    -h | --help | help) usage ;;
+    *) usage >&2; exit 1 ;;
+esac
