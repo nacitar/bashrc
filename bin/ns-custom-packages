@@ -4,22 +4,35 @@ set -eu
 # Manages locally built packages: ones that exist in no repository, so a normal
 # system update never touches them.
 #
-#   ns-custom-packages [update [NAME...]]
+#   ns-custom-packages [update [--no-pull] [NAME...]]
 #   ns-custom-packages list
-#   ns-custom-packages add DIRECTORY [NAME]
-#   ns-custom-packages install NAME
-#   ns-custom-packages remove NAME
+#   ns-custom-packages available
+#   ns-custom-packages add [--yes] SOURCE [NAME]
+#   ns-custom-packages install [--yes] SOURCE|NAME
+#   ns-custom-packages remove [--keep-source] NAME
+#
+# SOURCE is a directory, a name from the catalog (see `available`), or a git URL.
+# A catalog name or URL is cloned into ${XDG_DATA_HOME:-~/.local/share}/ns-custom-packages;
+# a directory is used where it is. `install` of an unmanaged SOURCE adds it first.
 #
 # The managed packages are listed in
 #   ${XDG_CONFIG_HOME:-~/.config}/ns-custom-packages/packages
 # one per line as `<directory> [package-name]`; `add` and `remove` edit it, and
 # it can be edited by hand too ('#' comments and blank lines are kept).
 #
+# The catalog maps names to git URLs. It is built into this script and can be
+# extended or overridden by
+#   ${XDG_CONFIG_HOME:-~/.config}/ns-custom-packages/catalog
+# with one `<name> <git-url>` per line.
+#
 # Each directory holds a PKGBUILD and an update.sh that follows a small
 # contract: `update.sh --check` exits 10 when a rebuild is needed, and a bare
 # `update.sh` builds the package into that directory (never using sudo).
-# `update` runs those and installs what they built, so it belongs after the
-# system update, once the package databases are current.
+# `update` first fast-forwards each package's git checkout (when it is a clean
+# checkout with an upstream), runs those, and installs what they built, so it
+# belongs after the system update, once the package databases are current.
+# Everything a package's repository contains runs as you, and the package it
+# builds is installed as root, so only manage repositories you trust.
 #
 # `update` only manages a package once it is installed. The first install is
 # `install`, which shows pacman's own questions (for instance, whether to
@@ -29,10 +42,27 @@ set -eu
 unset VIRTUAL_ENV
 
 config_dir=${XDG_CONFIG_HOME:-${HOME}/.config}/ns-custom-packages
+data_dir=${XDG_DATA_HOME:-${HOME}/.local/share}/ns-custom-packages
 packages_file=${NS_CUSTOM_PACKAGES_FILE:-${config_dir}/packages}
+catalog_file=${config_dir}/catalog
+
+# name -> git URL of packages that can be installed by name
+declare -A catalog=(
+    [kitty-pseudo-transparency]=https://github.com/sevaht/kitty-pseudo-transparency.git
+)
 
 usage() {
-    sed -n '4,11p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+    cat <<'EOF'
+Usage:
+  ns-custom-packages [update [--no-pull] [NAME...]]   build and install what is out of date
+  ns-custom-packages list                             managed packages and their status
+  ns-custom-packages available                        packages that can be installed by name
+  ns-custom-packages add [--yes] SOURCE [NAME]        manage a directory, catalog package or git URL
+  ns-custom-packages install [--yes] SOURCE|NAME      add if needed, build, and install
+  ns-custom-packages remove [--keep-source] NAME      uninstall and stop managing
+
+SOURCE is a directory, a catalog name (see `available`), or a git URL.
+EOF
 }
 
 die() {
@@ -81,6 +111,113 @@ tilde() {
     echo "${1/#"${HOME}"\//\~/}"
 }
 
+# -------------------------------------------------------- catalog and clones
+
+# Adds the user's catalog file to the built-in catalog.
+load_catalog() {
+    [[ -f ${catalog_file} ]] || return 0
+    local name url _
+    while read -r name url _ <&3; do
+        [[ -z ${name} || ${name} == '#'* || -z ${url} ]] && continue
+        catalog[${name}]=${url}
+    done 3< "${catalog_file}"
+}
+
+is_url() {
+    [[ $1 == *://* || $1 == git@*:* || $1 == *.git ]]
+}
+
+assume_yes=0
+resolved_dir=
+resolved_name=
+resolved_cloned=0
+
+# Finds the directory for SOURCE, cloning it first when it is a catalog name or
+# a git URL. Sets resolved_dir, resolved_name (the catalog name, if it was one)
+# and resolved_cloned; fails if SOURCE is none of those. Not for use in $(...),
+# since it sets variables.
+resolve_source() {
+    local source=$1 url name
+    resolved_dir='' resolved_name='' resolved_cloned=0
+    load_catalog
+    if [[ ${source} != */* && -n ${catalog[${source}]+set} ]]; then
+        name=${source}
+        url=${catalog[${source}]}
+        resolved_name=${name}
+    elif [[ -d ${source} ]]; then
+        resolved_dir=$(realpath -- "${source}")
+        return 0
+    elif is_url "${source}"; then
+        url=${source}
+        name=${url##*[/:]}
+        name=${name%.git}
+        if (( ! assume_yes )); then
+            >&2 echo "${url} is not in the catalog. Its PKGBUILD and update.sh run as you, and the"
+            >&2 echo "package it builds is installed as root."
+            local answer=
+            read -r -p "Continue? [y/N] " answer || true
+            [[ ${answer} == [yY]* ]] || die "aborted."
+        fi
+    else
+        return 1
+    fi
+    local target=${data_dir}/${name}
+    if [[ -e ${target} ]]; then
+        # a checkout left behind by `remove` is reused when it is of the same repository
+        [[ $(git -C "${target}" remote get-url origin 2>/dev/null) == "${url}" ]] || die "${target} already exists."
+        >&2 echo "Using the existing checkout $(tilde "${target}")."
+        resolved_dir=${target}
+        return 0
+    fi
+    mkdir -p "${data_dir}"
+    >&2 echo "Cloning ${url}..."
+    GIT_TERMINAL_PROMPT=0 git clone --quiet -- "${url}" "${target}" || die "could not clone ${url}."
+    resolved_dir=${target}
+    resolved_cloned=1
+}
+
+# Fast-forwards DIR's git checkout when it is a clean one with an upstream. Never
+# fails: anything else is skipped, with a note where it is worth one.
+# Usage: pull_checkout DIR NAME
+pull_checkout() {
+    local dir=$1 name=$2 before after output
+    git -C "${dir}" rev-parse --is-inside-work-tree >/dev/null 2>&1 || return 0
+    git -C "${dir}" rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' >/dev/null 2>&1 || return 0
+    if [[ -n $(git -C "${dir}" status --porcelain --untracked-files=no) ]]; then
+        echo "${name}: has local changes; not pulling."
+        return 0
+    fi
+    before=$(git -C "${dir}" rev-parse HEAD)
+    if ! output=$(GIT_TERMINAL_PROMPT=0 git -C "${dir}" pull --ff-only --quiet 2>&1); then
+        >&2 echo "WARNING: ${name}: could not fast-forward (${output##*$'\n'}); using the checkout as it is."
+        return 0
+    fi
+    after=$(git -C "${dir}" rev-parse HEAD)
+    if [[ ${before} != "${after}" ]]; then
+        echo "${name}: pulled new commits."
+    fi
+}
+
+# Deletes DIR if this tool cloned it (it is under the data directory) and it holds
+# nothing worth keeping: no changes to tracked files and no unpushed commits.
+# Usage: delete_checkout DIR NAME
+delete_checkout() {
+    local dir=$1 name=$2
+    [[ ${dir} == "${data_dir}"/* && -d ${dir} ]] || return 0
+    if git -C "${dir}" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+        if [[ -n $(git -C "${dir}" status --porcelain --untracked-files=no) ]]; then
+            echo "Kept $(tilde "${dir}"): it has uncommitted changes."
+            return 0
+        fi
+        if [[ -n $(git -C "${dir}" log --branches --not --remotes --oneline 2>/dev/null) ]]; then
+            echo "Kept $(tilde "${dir}"): it has commits that were never pushed."
+            return 0
+        fi
+    fi
+    rm -rf -- "${dir}"
+    echo "Deleted the checkout $(tilde "${dir}")."
+}
+
 # ------------------------------------------------------------ package state
 
 # Prints the installed version of package NAME; fails if it isn't installed.
@@ -119,6 +256,8 @@ build_if_needed() {
 
 # ----------------------------------------------------------------- commands
 
+do_pull=1
+
 update_one() {
     local dir=$1 name=$2 installed package built
     if [[ ! -x ${dir}/update.sh ]]; then
@@ -128,6 +267,9 @@ update_one() {
     if ! installed=$(installed_version "${name}"); then
         echo "${name}: not installed; skipping (use: ns-custom-packages install ${name})."
         return 0
+    fi
+    if (( do_pull )); then
+        pull_checkout "${dir}" "${name}"
     fi
     if ! build_if_needed "${dir}" "${name}"; then
         >&2 echo "ERROR: ${name}: update failed; leaving ${installed} installed."
@@ -151,14 +293,21 @@ update_one() {
 }
 
 cmd_update() {
+    local wanted=() failures=0 i name arg
+    for arg in "$@"; do
+        case ${arg} in
+            --no-pull) do_pull=0 ;;
+            -*) die "unknown option: ${arg}" ;;
+            *) wanted+=("${arg}") ;;
+        esac
+    done
     load_entries
     echo "custom packages: checking..."
     if (( ! ${#entry_names[@]} )); then
         echo "custom packages: none managed (see: ns-custom-packages add); nothing to do."
         return 0
     fi
-    local wanted=("$@") failures=0 i name
-    for name in "${wanted[@]}"; do
+    for name in ${wanted[@]+"${wanted[@]}"}; do
         find_entry "${name}" || die "${name} isn't a managed package."
     done
     for i in "${!entry_names[@]}"; do
@@ -176,7 +325,7 @@ cmd_update() {
 cmd_list() {
     load_entries
     if (( ! ${#entry_names[@]} )); then
-        echo "No custom packages are managed (add one with: ns-custom-packages add DIRECTORY)."
+        echo "No custom packages are managed (see: ns-custom-packages available, or add DIRECTORY)."
         return 0
     fi
     printf '%-28s %-14s %-24s %s\n' NAME INSTALLED STATUS DIRECTORY
@@ -209,15 +358,59 @@ cmd_list() {
     done
 }
 
+cmd_available() {
+    (( $# == 0 )) || { usage >&2; exit 1; }
+    load_catalog
+    load_entries
+    printf '%-28s %-22s %s\n' NAME STATUS URL
+    local name status version
+    for name in $(printf '%s\n' "${!catalog[@]}" | sort); do
+        if version=$(installed_version "${name}"); then
+            status="installed ${version}"
+        elif find_entry "${name}"; then
+            status="managed, not installed"
+        else
+            status="available"
+        fi
+        printf '%-28s %-22s %s\n' "${name}" "${status}" "${catalog[${name}]}"
+    done
+}
+
+added_name=
+show_install_hint=1
+
+# Registers SOURCE; sets added_name. A checkout that was just cloned for it is
+# removed again if it turns out not to be a usable package.
 cmd_add() {
-    (( $# >= 1 && $# <= 2 )) || { usage >&2; exit 1; }
-    local dir name
-    dir=$(realpath -- "$1") || die "$1 doesn't exist."
-    [[ -d ${dir} ]] || die "${dir} isn't a directory."
-    [[ -f ${dir}/PKGBUILD ]] || die "${dir} has no PKGBUILD."
-    [[ -x ${dir}/update.sh ]] || die "${dir} needs an executable update.sh (see the header of $0)."
-    if (( $# == 2 )); then
-        name=$2
+    local args=() arg
+    for arg in "$@"; do
+        case ${arg} in
+            --yes) assume_yes=1 ;;
+            -*) die "unknown option: ${arg}" ;;
+            *) args+=("${arg}") ;;
+        esac
+    done
+    (( ${#args[@]} >= 1 && ${#args[@]} <= 2 )) || { usage >&2; exit 1; }
+    load_entries
+    if find_entry "${args[0]}"; then
+        die "${args[0]} is already managed (${entry_dirs[entry_index]})."
+    fi
+    resolve_source "${args[0]}" ||
+        die "${args[0]} isn't a directory, a catalog package (see: ns-custom-packages available) or a git URL."
+    local dir=${resolved_dir} name cloned=${resolved_cloned}
+    reject() {
+        if (( cloned )); then
+            rm -rf -- "${dir}"
+        fi
+        die "$@"
+    }
+    [[ -d ${dir} ]] || reject "${dir} isn't a directory."
+    [[ -f ${dir}/PKGBUILD ]] || reject "${dir} has no PKGBUILD."
+    [[ -x ${dir}/update.sh ]] || reject "${dir} needs an executable update.sh (see the header of $0)."
+    if (( ${#args[@]} == 2 )); then
+        name=${args[1]}
+    elif [[ -n ${resolved_name} ]]; then
+        name=${resolved_name}
     else
         # the package name the PKGBUILD declares, else the directory's name
         name=$(cd "${dir}" && source ./PKGBUILD >/dev/null 2>&1 && printf %s "${pkgname[0]}") || name=
@@ -227,10 +420,10 @@ cmd_add() {
     local i
     for i in "${!entry_names[@]}"; do
         if [[ ${entry_names[i]} == "${name}" ]]; then
-            die "${name} is already managed (${entry_dirs[i]})."
+            reject "${name} is already managed (${entry_dirs[i]})."
         fi
         if [[ ${entry_dirs[i]} == "${dir}" ]]; then
-            die "${dir} is already managed as ${entry_names[i]}."
+            reject "${dir} is already managed as ${entry_names[i]}."
         fi
     done
     mkdir -p "$(dirname "${packages_file}")"
@@ -239,17 +432,35 @@ cmd_add() {
         echo >> "${packages_file}"
     fi
     printf '%s %s\n' "$(tilde "${dir}")" "${name}" >> "${packages_file}"
+    added_name=${name}
     echo "Added ${name} ($(tilde "${dir}"))."
-    if ! installed_version "${name}" >/dev/null; then
+    if (( show_install_hint )) && ! installed_version "${name}" >/dev/null; then
         echo "It isn't installed yet. Build and install it with: ns-custom-packages install ${name}"
     fi
 }
 
 cmd_install() {
-    (( $# == 1 )) || { usage >&2; exit 1; }
+    local args=() arg name
+    for arg in "$@"; do
+        case ${arg} in
+            --yes) assume_yes=1 ;;
+            -*) die "unknown option: ${arg}" ;;
+            *) args+=("${arg}") ;;
+        esac
+    done
+    (( ${#args[@]} == 1 )) || { usage >&2; exit 1; }
     load_entries
-    find_entry "$1" || die "$1 isn't a managed package (add it first)."
-    local name=$1 dir=${entry_dirs[entry_index]} package
+    if find_entry "${args[0]}"; then
+        name=${args[0]}
+    else
+        # not managed yet: a directory, catalog name or git URL is added first
+        show_install_hint=0
+        cmd_add "${args[0]}"
+        name=${added_name}
+        load_entries
+        find_entry "${name}" || die "${name} could not be added."
+    fi
+    local dir=${entry_dirs[entry_index]} package
     [[ -x ${dir}/update.sh ]] || die "${dir}/update.sh not found."
     build_if_needed "${dir}" "${name}" || die "${name}: build failed."
     if ! package=$(newest_package "${dir}" "${name}"); then
@@ -267,7 +478,7 @@ drop_entry() {
     local tmp line dir name _
     tmp=$(mktemp)
     while IFS= read -r line <&3 || [[ -n ${line} ]]; do
-        dir= name=
+        dir='' name=''
         read -r dir name _ <<< "${line}" || true
         if [[ -n ${dir} && ${dir} != '#'* ]]; then
             dir=${dir/#\~\//${HOME}/}
@@ -282,10 +493,18 @@ drop_entry() {
 }
 
 cmd_remove() {
-    (( $# == 1 )) || { usage >&2; exit 1; }
+    local args=() arg keep_source=0
+    for arg in "$@"; do
+        case ${arg} in
+            --keep-source) keep_source=1 ;;
+            -*) die "unknown option: ${arg}" ;;
+            *) args+=("${arg}") ;;
+        esac
+    done
+    (( ${#args[@]} == 1 )) || { usage >&2; exit 1; }
     load_entries
-    find_entry "$1" || die "$1 isn't a managed package."
-    local name=$1 version provided=() item
+    find_entry "${args[0]}" || die "${args[0]} isn't a managed package."
+    local name=${args[0]} dir=${entry_dirs[entry_index]} version provided=() item
     if version=$(installed_version "${name}"); then
         # what it stands in for, so the way back can be shown afterwards
         for item in $(LC_ALL=C pacman -Qi "${name}" | awk -F' *: *' '/^Provides/ {print $2}'); do
@@ -297,6 +516,9 @@ cmd_remove() {
     fi
     drop_entry "${name}"
     echo "${name} is no longer managed."
+    if (( ! keep_source )); then
+        delete_checkout "${dir}" "${name}"
+    fi
     for item in ${provided[@]+"${provided[@]}"}; do
         if ! pacman -Q "${item}" >/dev/null 2>&1 && pacman -Si "${item}" >/dev/null 2>&1; then
             echo "The repository package ${item} is not installed; to get it back: sudo pacman -S ${item}"
@@ -311,6 +533,7 @@ command=${1:-update}
 case ${command} in
     update) cmd_update "$@" ;;
     list) cmd_list "$@" ;;
+    available) cmd_available "$@" ;;
     add) cmd_add "$@" ;;
     install) cmd_install "$@" ;;
     remove) cmd_remove "$@" ;;
